@@ -1,5 +1,6 @@
 package Project2;
 
+import global.Convert;
 import global.RID;
 
 public class TID extends Object
@@ -36,28 +37,37 @@ public class TID extends Object
         this.recordIDs = tid.recordIDs;
     }
 
-    public boolean equals(TID tid1, TID tid2)
+    public boolean equals(TID tid)
     {
-        boolean result = false;
-        if(tid1 == tid2)
+        if ((this.numRIDs == tid.numRIDs) && (this.position == tid.position) && (this.recordIDs == tid.recordIDs))
         {
-            result = true;
+            return true;
+        } else {
+            return false;
         }
-        return result;
     }
 
-    public void writeToByteArray(byte[] array, int offset)
+    public void writeToByteArray(byte[] array, int offset) throws java.io.IOException
     {
-
+        Convert.setIntValue ( numRIDs, offset, array);
+        Convert.setIntValue ( position, offset+4, array);
+        int lastPos = offset+4;
+        for(int i = 0; i < recordIDs.length; i++)
+        {
+            lastPos += 4;
+            Convert.setIntValue ( recordIDs[i].slotNo, lastPos, array);
+            lastPos += 4;
+            Convert.setIntValue ( recordIDs[i].pageNo.pid, lastPos, array);
+        }
     }
 
     public void setPosition(int position)
     {
-
+        this.position = position;
     }
 
     public void setRID(int column, RID recordID)
     {
-
+        recordIDs[column] = recordID;
     }
 }
