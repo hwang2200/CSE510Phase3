@@ -1,0 +1,131 @@
+import java.io.IOException;
+import global.*;
+import heap.*;
+import value.*;
+
+public class Columnarfile
+{
+        private String name;
+        private static int numberColumns;
+        private AttrType[] attributeType;
+        private Heapfile[] heapfiles;
+
+        public Columnarfile(String name, int numColumns, AttrType[] type)
+        {
+		this.name = name;
+		Columnarfile.numColumns = numColumns;
+		this.type = type;
+		this.heapfiles = new Heapfile[numColumns];
+
+		// Create a heapfile for each column
+		for (int i = 0; i < numColumns, i++)
+		{
+			heapfiles[i] = new Heapfile(this.name + ".columnid" + i);
+		}
+
+		// Initialize the metadata file
+		try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(this.name + ".hdr")))
+		{
+			oos.writeObject(this.type); // Write the type array to the metadata file
+		} 
+		catch (IOException e)
+		{
+			throw new IOException("Unable to create or write to the metadata file.", e);
+		}
+		
+        }
+	
+	// Deletes all the column files and the metadata file associated with this columnar file
+	void deleteColumnarFile()
+        {
+		for (int i = 0; i < numColumns; i++) {
+            	File columnFile = new File(this.name + ".columnid" + i);
+            	if (columnFile.exists())
+		{
+                	if (!columnFile.delete())
+			{
+                    		throw new IOException("Failed to delete column file: " + columnFile.getName());
+                	}
+            	}
+        }
+
+        	File metadataFile = new File(this.name + ".hdr");
+        	if (metadataFile.exists() && !metadataFile.delete())
+		{
+            		throw new IOException("Failed to delete metadata file: " + metadataFile.getName());
+        }	
+        }
+
+	// Inserts a new tuple into the columnar file
+        public TID insertTuple(byte[] tuplePtr)
+        {
+                byte[][] columnValues = splitTuple(tuplePtr, this.type);
+		TID tid = new TID(numColumns);
+        	for (int i = 0; i < numColumns; i++)
+		{
+			RID rid = heapfiles[i].insertRecord(columnValues[i]);
+            		if (rid == null)
+			{
+				throw new Exception("Insertion failed for column " + i);
+			}
+			tid.recordIDs[i] = rid;
+		}
+		return tid;
+	 
+        }
+
+        public Tuple getTuple(TID tid)
+        {
+                return null;
+        }
+
+        public ValueClass getValue(TID tid, column)
+        {
+                return null;
+        }
+
+        public int getTupleCnt()
+        {
+                return 0;
+        }
+
+        public TupleScan openTupleScan()
+        {
+                return null;
+        }
+
+        public Scan openColumnScan(int columnNo)
+        {
+                return null;
+        }
+
+        public boolean updateTuple(TID tid, Tuple newtuple)
+        {
+                return false;
+        }
+
+        public boolean updateColumnofTuple(TID tid, Tuple newtuple, int column)
+        {
+                return false;
+        }
+
+        public boolean createBTreeIndex(int column)
+        {
+                return false;
+        }
+
+        public boolean createBitMapIndex(int columnNo, valueClass value)
+        {
+                return false;
+        }
+
+        public boolean markTupleDeleted(TID tid)
+        {
+                return false;
+        }
+
+        public boolean purgeAllDeletedTuples()
+        {
+                return false;
+        }
+}
