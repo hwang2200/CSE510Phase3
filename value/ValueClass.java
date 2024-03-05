@@ -1,3 +1,5 @@
+package value;
+
 public abstract class ValueClass extends Object
 {
 	public ValueClass()

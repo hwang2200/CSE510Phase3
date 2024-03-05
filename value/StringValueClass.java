@@ -1,3 +1,5 @@
+import value.ValueClass;
+
 class StringValueClass extends ValueClass
 {
 	private String value;

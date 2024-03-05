@@ -1,3 +1,5 @@
+import value.ValueClass;
+
 class IntegerValueClass extends ValueClass
 {
 	private int value;
