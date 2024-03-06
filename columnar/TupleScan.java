@@ -1,7 +1,9 @@
 package columnar;
 
 import diskmgr.Page;
+import global.AttrType;
 import global.PageId;
+import global.RID;
 import global.SystemDefs;
 import heap.*;
 import TID.*;
@@ -10,122 +12,71 @@ import java.io.IOException;
 
 public class TupleScan
 {
+    //Columnar file we are using
     private Columnarfile _cf;
-    private boolean nextUserStatus;
-    private HFPage datapage = new HFPage();
-    private HFPage dirpage = new HFPage();
+    private Scan[] scan;
 
     //Constructor
-    public TupleScan(Columnarfile cf) throws InvalidTupleSizeException
-    {
-        init(cf);
+    public TupleScan(Columnarfile cf) throws InvalidTupleSizeException, IOException {
+        this._cf = cf;
+        this.scan = new Scan[_cf.numColumns]; //Scanner for each column since each column has a heapfile
+
+        //Initialize new scanner for each heapfile in columnarfile
+        int i = 0;
+        for(Heapfile hf : _cf.heapfiles)
+        {
+            scan[i] = hf.openScan();
+            i++;
+        }
     }
 
     //Methods
     public void closetuplescan()
     {
-
+        for(Scan s : scan)
+        {
+            //Call scan closescan() function
+            s.closescan();
+        }
     }
 
-    public Tuple getNext(TID tid) throws InvalidTupleSizeException, IOException
-    {
-        Tuple recptrtuple = null;
-
-        if (nextUserStatus != true)
+    public Tuple getNext(TID tid) throws InvalidTupleSizeException, IOException, FieldNumberOutOfBoundException {
+        Tuple nextTID = new Tuple();
+        for(Scan s : scan)
         {
-            nextDataPage();
-        }
-
-        if (datapage == null)
-        {
-            return null;
-        }
-
-        //Change to numRIDs, position, and array of record IDs
-        tid.pageNo.pid = userrid.pageNo.pid;
-        rid.slotNo = userrid.slotNo;
-
-        try
-        {
-            recptrtuple = datapage.getRecord(rid);
-        }
-        catch (Exception e)
-        {
-            //    System.err.println("SCAN: Error in Scan" + e);
-            e.printStackTrace();
-        }
-
-        userrid = datapage.nextRecord(rid);
-        if(userrid == null) nextUserStatus = false;
-        else nextUserStatus = true;
-
-        return recptrtuple;
-    }
-
-    public boolean position(TID tid)
-    {
-
-    }
-
-    private void reset()
-    {
-        if (datapage != null)
-        {
-            try
+            for(int i = 0; i < _cf.type.length; i++)
             {
-                unpinPage(datapageId, false);
-            }
-            catch (Exception e)
-            {
-                // 	System.err.println("SCAN: Error in Scan" + e);
-                e.printStackTrace();
+                Tuple tuple = s.getNext(tid.recordIDs[i]);
+                
+                if(_cf.type[i].attrType == AttrType.attrInteger)
+                {
+                    nextTID.setIntFld(i, tuple.getIntFld(i));
+                }
+                if(_cf.type[i].attrType == AttrType.attrString)
+                {
+                    nextTID.setStrFld(i, tuple.getStrFld(i));
+                }
+                if(_cf.type[i].attrType == AttrType.attrReal)
+                {
+                    nextTID.setFloFld(i, tuple.getFloFld(i));
+                }
             }
         }
-        datapageId.pid = 0;
-        datapage = null;
-
-        if (dirpage != null)
-        {
-            try
-            {
-                unpinPage(dirpageId, false);
-            }
-            catch (Exception e)
-            {
-                //     System.err.println("SCAN: Error in Scan: " + e);
-                e.printStackTrace();
-            }
-        }
-        dirpage = null;
-        nextUserStatus = true;
+        return nextTID;
     }
 
-    private boolean nextDataPage() throws InvalidTupleSizeException, IOException
+    public boolean position(TID tid) throws InvalidTupleSizeException, IOException
     {
-
+        boolean result = true;
+        int i = 0;
+        for(Scan s : scan)
+        {
+            if(s.position(tid.recordIDs[i]) == false)
+            {
+                result = false;
+                i++;
+            }
+        }
+        return result;
     }
-
-    private void pinPage(PageId pageno, Page page, boolean emptyPage)
-            throws HFBufMgrException {
-
-        try {
-            SystemDefs.JavabaseBM.pinPage(pageno, page, emptyPage);
-        }
-        catch (Exception e) {
-            throw new HFBufMgrException(e,"Scan.java: pinPage() failed");
-        }
-
-    } // end of pinPage
-
-    private void unpinPage(PageId pageno, boolean dirty)
-            throws HFBufMgrException {
-
-        try {
-            SystemDefs.JavabaseBM.unpinPage(pageno, dirty);
-        }
-        catch (Exception e) {
-            throw new HFBufMgrException(e,"Scan.java: unpinPage() failed");
-        }
-
-    } // end of unpinPage
 }

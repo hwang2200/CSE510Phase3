@@ -14,9 +14,9 @@ import java.io.ObjectOutputStream;
 public class Columnarfile
 {
     private String name;
-    private static int numColumns;
-    private AttrType[] type;
-    private heap.Heapfile[] heapfiles;
+    public static int numColumns;
+    public AttrType[] type;
+    public Heapfile[] heapfiles;
 
     public Columnarfile(String name, int numColumns, AttrType[] type) throws IOException, HFDiskMgrException, HFException, HFBufMgrException {
         this.name = name;
