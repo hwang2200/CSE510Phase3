@@ -7,6 +7,7 @@ import global.RID;
 import global.SystemDefs;
 import heap.*;
 import TID.*;
+import org.w3c.dom.Attr;
 
 import java.io.IOException;
 
@@ -42,12 +43,21 @@ public class TupleScan
 
     public Tuple getNext(TID tid) throws InvalidTupleSizeException, IOException, FieldNumberOutOfBoundException {
         Tuple nextTID = new Tuple();
+
+        //For each scan object (one scan object for each heapfile)
         for(Scan s : scan)
         {
-            for(int i = 0; i < _cf.type.length; i++)
+            //For all columns (since each column contains one heapfile, we get the next records in each heapfile)
+            for(int i = 0; i < _cf.heapfiles.length; i++)
             {
+                //Tuple storing data related to recordID
                 Tuple tuple = s.getNext(tid.recordIDs[i]);
-                
+
+                //For each record id in that tid, check its type (associated with type array in cf) and set it in the tuple we are returning
+                if(_cf.type[i].attrType == AttrType.attrSymbol || _cf.type[i].attrType == AttrType.attrNull)
+                {
+                    continue;
+                }
                 if(_cf.type[i].attrType == AttrType.attrInteger)
                 {
                     nextTID.setIntFld(i, tuple.getIntFld(i));

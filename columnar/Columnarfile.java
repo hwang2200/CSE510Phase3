@@ -1,6 +1,7 @@
 package columnar;
 
 import global.AttrType;
+import global.Convert;
 import global.RID;
 import heap.*;
 import TID.*;
@@ -22,7 +23,7 @@ public class Columnarfile
         this.name = name;
         Columnarfile.numColumns = numColumns;
         this.type = type;
-        this.heapfiles = new heap.Heapfile[numColumns];
+        this.heapfiles = new Heapfile[numColumns];
 
         // Create a heapfile for each column
         for (int i = 0; i < numColumns; i++)
@@ -64,6 +65,8 @@ public class Columnarfile
 
     // Inserts a new tuple into the columnar file
     public TID insertTuple(byte[] tuplePtr) throws Exception {
+        //I don't know where split tuple is coming from - jaesang
+        //Need to insert based on attribute type - jaesang
         byte[][] columnValues = splitTuple(tuplePtr, this.type);
         TID tid = new TID(numColumns);
         for (int i = 0; i < numColumns; i++)
@@ -73,15 +76,57 @@ public class Columnarfile
             {
                 throw new Exception("Insertion failed for column " + i);
             }
+
+
             tid.recordIDs[i] = rid;
         }
         return tid;
 
     }
 
-    public heap.Tuple getTuple(TID tid)
-    {
-        return null;
+    public Tuple getTuple(TID tid) throws Exception {
+        //new tuple must contain byte array which contains data, offset, and length of byte array
+        Tuple result = new Tuple();
+        byte[] resultData = new byte[0];
+        int offset = 0;
+
+        //For each column (since each column contains a heapfile)
+        for(int i = 0; i < numColumns; i++)
+        {
+            //Get all the records in a heapfile associated with tid
+            result = heapfiles[i].getRecord(tid.recordIDs[i]);
+            byte[] data = result.returnTupleByteArray();
+
+            //If type associated with that record is...
+            //Write appropriate data to byte array
+            if(type[i].attrType == AttrType.attrInteger)
+            {
+                int dataInt = Convert.getIntValue(offset, data);
+                Convert.setIntValue(dataInt, offset, resultData);
+                offset += 4;
+                //Write data array associated with rid to new byte array
+
+            }
+
+            if(type[i].attrType == AttrType.attrString)
+            {
+                // Not sure how to get string length for conversion - jaesang
+                String dataString = Convert.getStrValue(offset, data, data[i]);
+                Convert.setStrValue(dataString, offset, resultData);
+                offset += dataString.length();
+            }
+
+            if(type[i].attrType == AttrType.attrReal)
+            {
+                float dataFloat = Convert.getFloValue(offset, data);
+                Convert.setFloValue(dataFloat, offset, resultData);
+                offset += 4;
+            }
+
+            //Update tuple with resulting data
+            result.tupleSet(resultData, 0, resultData.length);
+        }
+        return result;
     }
 
     public ValueClass getValue(TID tid, int column)
