@@ -6,7 +6,7 @@ import bufmgr.*;
 import global.*;
 import heap.*;
 
-public class BitMapHeaderPage {
+public class BitMapHeaderPage extends HFPage {
     public BitMapHeaderPage() {
 
     }
@@ -42,6 +42,6 @@ public class BitMapHeaderPage {
     void set_maxKeySize(int key_size)
         throws IOException
     {
-        setSlot(1, key_size, 0)
+        setSlot(1, key_size, 0);
     }
 }
