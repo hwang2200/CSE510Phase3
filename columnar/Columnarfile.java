@@ -176,27 +176,92 @@ public class Columnarfile
 
     public boolean updateTuple(TID tid, heap.Tuple newtuple)
     {
-        return false;
+        int i = 0;
+
+		for (;i<numberOfColumns;i++) {
+			if(!updateColumnofTuple(tid,newtuple,i+1))
+				return false;
+		}
+		return true;
     }
 
     public boolean updateColumnofTuple(TID tid, heap.Tuple newtuple, int column)
     {
-        return false;
+        int intValue;
+		String strValue;
+		Tuple tuple = null;
+		try {
+			if (attributeType[column-1].attrType == AttrType.attrInteger)	{
+				intValue = newtuple.getIntFld(column);
+				tuple = new Tuple(4);
+				tuple.setIntFld(1, intValue);
+			}
+			else if (attributeType[column-1].attrType == AttrType.attrString)	{
+				strValue = newtuple.getStrFld(column);
+				tuple = new Tuple(stringSize);
+				tuple.setStrFld(1, strValue);
+			}
+
+			return heapFileColumns[column-1].updateRecord(tid.recordIDs[column-1], tuple);
+
+		}catch (Exception e)	{
+			e.printStackTrace();
+		}
+		return false;
     }
 
     public boolean createBTreeIndex(int column)
     {
-        return false;
+        return true;
     }
 
     public boolean createBitMapIndex(int columnNo, ValueClass value)
     {
-        return false;
+        return true;
     }
 
     public boolean markTupleDeleted(TID tid)
     {
-        return false;
+        byte[] deletedTids = new byte[numberOfColumns*4*2];
+
+		int i = 0;
+		int offset = 0;
+		int tidOffset = 0;
+
+
+		try{
+			for (AttrType attr: attributeType) {
+				if(attr.attrType == AttrType.attrInteger)
+				{
+					Convert.setIntValue(tid.recordIDs[i].pageNo.pid, tidOffset, deletedTids);
+					Convert.setIntValue(tid.recordIDs[i].slotNo, tidOffset + 4, deletedTids);
+
+					offset = offset + 4;
+					tidOffset = tidOffset + 8;
+					if(!heapFileColumns[i].deleteRecord(tid.recordIDs[i]))
+						return false;
+					i++;
+				}
+				else if(attr.attrType == AttrType.attrString)
+				{
+					Convert.setIntValue(tid.recordIDs[i].pageNo.pid, tidOffset, deletedTids);
+					Convert.setIntValue(tid.recordIDs[i].slotNo, tidOffset + 4, deletedTids);
+
+					offset = offset + stringSize;
+					tidOffset = tidOffset + 8;
+					if(!heapFileColumns[i].deleteRecord(tid.recordIDs[i]))
+						return false;
+					i++;
+				}
+			}
+			deletedTupleList.insertRecord(deletedTids);
+			this.deleteCount++;
+			return true;
+		}catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		return false;
     }
 
     public boolean purgeAllDeletedTuples()
