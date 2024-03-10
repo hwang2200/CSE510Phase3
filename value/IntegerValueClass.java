@@ -1,6 +1,6 @@
-import value.ValueClass;
+package value;
 
-class IntegerValueClass extends ValueClass
+public class IntegerValueClass extends ValueClass
 {
 	private int value;
 

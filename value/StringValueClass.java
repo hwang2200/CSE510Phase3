@@ -1,10 +1,10 @@
-import value.ValueClass;
+package value;
 
-class StringValueClass extends ValueClass
+public class StringValueClass extends ValueClass
 {
 	private String value;
 	
-	public StringValue()
+	public StringValueClass()
 	{
 
 	}

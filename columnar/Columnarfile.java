@@ -129,24 +129,49 @@ public class Columnarfile
         return result;
     }
 
-    public ValueClass getValue(TID tid, int column)
+    public ValueClass getValue(TID tid, int column) throws Exception
     {
-        return null;
+        ValueClass result = null;
+        IntegerValueClass integer = null;
+        StringValueClass string = null;
+
+        Tuple tuple = heapfiles[column].getRecord(tid.recordIDs[column]);
+        byte[] data = tuple.returnTupleByteArray();
+        int offset = 0;
+
+        if(type[column].attrType == AttrType.attrInteger)
+        {
+            integer.setValue(Convert.getIntValue(offset, data));
+            result = integer;
+        }
+        if(type[column].attrType == AttrType.attrInteger)
+        {
+            string.setValue(Convert.getStrValue(offset, data, data[0]));
+            result = string;
+        }
+
+        return result;
     }
 
-    public int getTupleCnt()
-    {
-        return 0;
+    public int getTupleCnt() throws HFDiskMgrException, InvalidSlotNumberException, InvalidTupleSizeException, HFBufMgrException, IOException {
+        int count = 0;
+
+        for(int i = 0; i < heapfiles.length; i++)
+        {
+            count += heapfiles[i].getRecCnt();
+        }
+
+        return count;
     }
 
-    public TupleScan openTupleScan()
-    {
-        return null;
+    public TupleScan openTupleScan() throws InvalidTupleSizeException, IOException {
+        TupleScan tupleScan = new TupleScan(this);
+        return tupleScan;
     }
 
-    public heap.Scan openColumnScan(int columnNo)
-    {
-        return null;
+    public Scan openColumnScan(int columnNo) throws InvalidTupleSizeException, IOException {
+        Scan scan = new Scan(heapfiles[columnNo]);
+        return scan;
     }
 
     public boolean updateTuple(TID tid, heap.Tuple newtuple)
