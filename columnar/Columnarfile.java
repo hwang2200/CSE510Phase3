@@ -104,7 +104,6 @@ public class Columnarfile
                 int dataInt = Convert.getIntValue(offset, data);
                 Convert.setIntValue(dataInt, offset, resultData);
                 offset += 4;
-                //Write data array associated with rid to new byte array
 
             }
 
@@ -114,13 +113,6 @@ public class Columnarfile
                 String dataString = Convert.getStrValue(offset, data, data[i]);
                 Convert.setStrValue(dataString, offset, resultData);
                 offset += dataString.length();
-            }
-
-            if(type[i].attrType == AttrType.attrReal)
-            {
-                float dataFloat = Convert.getFloValue(offset, data);
-                Convert.setFloValue(dataFloat, offset, resultData);
-                offset += 4;
             }
 
             //Update tuple with resulting data
@@ -154,14 +146,7 @@ public class Columnarfile
     }
 
     public int getTupleCnt() throws HFDiskMgrException, InvalidSlotNumberException, InvalidTupleSizeException, HFBufMgrException, IOException {
-        int count = 0;
-
-        for(int i = 0; i < heapfiles.length; i++)
-        {
-            count += heapfiles[i].getRecCnt();
-        }
-
-        return count;
+        return  heapfiles[0].getRecCnt();
     }
 
     public TupleScan openTupleScan() throws InvalidTupleSizeException, IOException {
@@ -247,7 +232,7 @@ public class Columnarfile
 					Convert.setIntValue(tid.recordIDs[i].pageNo.pid, tidOffset, deletedTids);
 					Convert.setIntValue(tid.recordIDs[i].slotNo, tidOffset + 4, deletedTids);
 
-					offset = offset + stringSize;
+					offset = offset + strinmegSize;
 					tidOffset = tidOffset + 8;
 					if(!heapFileColumns[i].deleteRecord(tid.recordIDs[i]))
 						return false;
