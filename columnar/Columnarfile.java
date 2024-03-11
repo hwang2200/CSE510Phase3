@@ -65,23 +65,46 @@ public class Columnarfile
 
     // Inserts a new tuple into the columnar file
     public TID insertTuple(byte[] tuplePtr) throws Exception {
-        //I don't know where split tuple is coming from - jaesang
-        //Need to insert based on attribute type - jaesang
-        byte[][] columnValues = splitTuple(tuplePtr, this.type);
-        TID tid = new TID(numColumns);
-        for (int i = 0; i < numColumns; i++)
-        {
-            RID rid = heapfiles[i].insertRecord(columnValues[i]);
-            if (rid == null)
-            {
-                throw new Exception("Insertion failed for column " + i);
-            }
+    		
+	int curPos = 0;
+	TID tid = new TID(numberOfColumns);
+	tid.recordIDs = new RID[numberOfColumns];
 
+	int i = 0;
+	try {
+		for (AttrType t: attributeType) {
+			if (t.attrType == AttrType.attrInteger)	{
 
-            tid.recordIDs[i] = rid;
-        }
-        return tid;
+				int intAttr = Convert.getIntValue(curPos,tuplePtr);
+				curPos = curPos + 4;
 
+				byte[] value = new byte[4];
+				Convert.setIntValue(intAttr, 0, value);
+
+				tid.recordIDs[i] = new RID();
+				tid.recordIDs[i] = heapFileColumns[i].insertRecord(value);
+			}
+			if (t.attrType == AttrType.attrString)	{
+
+				String strAttr = Convert.getStrValue(curPos,tuplePtr,stringSize);
+
+				curPos = curPos + stringSize;
+				byte[] value = new byte[stringSize];
+				Convert.setStrValue(strAttr, 0, value);
+
+				tid.recordIDs[i] = new RID();
+				tid.recordIDs[i] = heapFileColumns[i].insertRecord(value);
+			}
+
+			i++;
+		}
+		tid.numRIDs = i;
+	
+	}
+	catch (Exception e){
+		e.printStackTrace();
+	}
+	return tid;    
     }
 
     public Tuple getTuple(TID tid) throws Exception {
