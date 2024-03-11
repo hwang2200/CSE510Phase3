@@ -178,7 +178,7 @@ public class Columnarfile
     {
         int i = 0;
 
-		for (;i<numberOfColumns;i++) {
+		for (;i<numColumns;i++) {
 			if(!updateColumnofTuple(tid,newtuple,i+1))
 				return false;
 		}
@@ -191,18 +191,18 @@ public class Columnarfile
 		String strValue;
 		Tuple tuple = null;
 		try {
-			if (attributeType[column-1].attrType == AttrType.attrInteger)	{
+			if (type[column-1].attrType == AttrType.attrInteger)	{
 				intValue = newtuple.getIntFld(column);
 				tuple = new Tuple(4);
 				tuple.setIntFld(1, intValue);
 			}
-			else if (attributeType[column-1].attrType == AttrType.attrString)	{
+			else if (type[column-1].attrType == AttrType.attrString)	{
 				strValue = newtuple.getStrFld(column);
-				tuple = new Tuple(stringSize);
+				tuple = new Tuple(strValue.length());
 				tuple.setStrFld(1, strValue);
 			}
 
-			return heapFileColumns[column-1].updateRecord(tid.recordIDs[column-1], tuple);
+			return heapfiles[column-1].updateRecord(tid.recordIDs[column-1], tuple);
 
 		}catch (Exception e)	{
 			e.printStackTrace();
@@ -222,7 +222,7 @@ public class Columnarfile
 
     public boolean markTupleDeleted(TID tid)
     {
-        byte[] deletedTids = new byte[numberOfColumns*4*2];
+        byte[] deletedTids = new byte[numColumns*4*2];
 
 		int i = 0;
 		int offset = 0;
@@ -230,7 +230,7 @@ public class Columnarfile
 
 
 		try{
-			for (AttrType attr: attributeType) {
+			for (AttrType attr: type) {
 				if(attr.attrType == AttrType.attrInteger)
 				{
 					Convert.setIntValue(tid.recordIDs[i].pageNo.pid, tidOffset, deletedTids);
@@ -238,7 +238,7 @@ public class Columnarfile
 
 					offset = offset + 4;
 					tidOffset = tidOffset + 8;
-					if(!heapFileColumns[i].deleteRecord(tid.recordIDs[i]))
+					if(!heapfiles[i].deleteRecord(tid.recordIDs[i]))
 						return false;
 					i++;
 				}

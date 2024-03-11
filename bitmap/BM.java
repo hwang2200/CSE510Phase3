@@ -17,7 +17,7 @@ public class BM implements GlobalConst {
 	   	PageUnpinnedException,
 	   	ReplacerException 
 	{
-		if (header.get_rootId() == INVALID_PAGE) {
+		if (header.get_rootId().pid == INVALID_PAGE) {
 			System.out.println("The Bitmap is Empty!!!");
 			return;
 		}
