@@ -299,7 +299,7 @@ public class BMPage extends Page
         {
             length = getSlotLength(i); 
             if (length == EMPTY_SLOT)
-            break;
+                break;
         }
         
         if(i == slotCnt)   //use a new slot

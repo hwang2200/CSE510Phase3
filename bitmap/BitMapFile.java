@@ -2,13 +2,13 @@ package bitmap;
 
 import btree.*;
 import java.io.*;
+
+import columnar.Columnarfile;
 import diskmgr.*;
 import bufmgr.*;
 import global.*;
 import heap.*;
-
-import project2.ColumnarFile;
-import project2.ValueClass;
+import value.ValueClass;
 
 public class BitMapFile implements GlobalConst {
 	private BitMapHeaderPage headerPage;
@@ -23,7 +23,7 @@ public class BitMapFile implements GlobalConst {
 		dbname = new String(filename);
 	}
 	
-	public BitMapFile(java.lang.String filename, ColumnarFile columnfile, int ColumnNo, ValueClass value) 
+	public BitMapFile(java.lang.String filename, Columnarfile columnfile, int ColumnNo, ValueClass value)
 		throws GetFileEntryException,
 		ConstructPageException,
 		IOException,
