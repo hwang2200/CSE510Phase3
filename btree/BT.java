@@ -37,7 +37,7 @@ import heap.*;
  * or the whole B+ tree structure or all leaf pages.
  *
  */
-public class BT  implements GlobalConst{
+public class BT implements GlobalConst{
 
   /** It compares two keys.
    *@param  key1  the first key to compare. Input parameter.
