@@ -203,12 +203,36 @@ public class Columnarfile
         return result;
     }
 
-    public boolean createBTreeIndex(int column)
+    public boolean createBTreeIndex(int column) throws Exception
     {
-        if (heapfiles[column] does not have btree index)
+        KeyClass key = null;
+        TID tid = new TID(numColumns);
+        int keyType = 0;
+        int keySize = 4;
+        //int offset = 0;
+
+        for(int i = 0; i < numColumns; i++)
         {
-            //Create a btree index for that column
-            BTIndexPage btIndex = new
+            keyType = type[i].attrType;
+            if(keyType == AttrType.attrInteger)
+            {
+                //Tuple tuple = heapfiles[i].getRecord(tid.recordIDs[i]);
+                //byte[] dataArray = tuple.returnTupleByteArray();
+                //int dataInt = Convert.getIntValue(offset, dataArray);
+                key = new IntegerKey(i);
+                //KeyDataEntry pair = new KeyDataEntry(key, tid.recordIDs[i]);
+                BTreeFile btreeFile = new BTreeFile("Int BTree File", keyType, keySize, DeleteFashion.FULL_DELETE);
+                btreeFile.insert(key, tid.recordIDs[i]);
+            }
+
+            if(keyType == AttrType.attrString)
+            {
+                key = new IntegerKey(i);
+                //KeyDataEntry pair = new KeyDataEntry(key, tid.recordIDs[i]);
+                BTreeFile btreeFile = new BTreeFile("String BTree File", keyType, keySize, DeleteFashion.FULL_DELETE);
+                btreeFile.insert(key, tid.recordIDs[i]);
+            }
+
         }
     }
 
