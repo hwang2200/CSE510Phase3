@@ -234,6 +234,7 @@ public class Columnarfile
             }
 
         }
+        return true;
     }
 
     public boolean createBitMapIndex(int columnNo, ValueClass value)
