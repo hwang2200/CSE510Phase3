@@ -12,7 +12,11 @@ public class PCounter {
         rcounter++;
     }
 
+    public static int getReadCount() { return rcounter;}
+
     public static void writeIncrement() {
         wcounter++;
     }
+
+    public static int getWriteCount() { return wcounter;}
 }
