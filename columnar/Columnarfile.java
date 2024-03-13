@@ -214,25 +214,21 @@ public class Columnarfile
         for(int i = 0; i < numColumns; i++)
         {
             keyType = type[i].attrType;
-            if(keyType == AttrType.attrInteger)
+            //Tuple tuple = heapfiles[i].getRecord(tid.recordIDs[i]);
+            //byte[] dataArray = tuple.returnTupleByteArray();
+            //int dataInt = Convert.getIntValue(offset, dataArray);
+            key = new IntegerKey(i);
+            //KeyDataEntry pair = new KeyDataEntry(key, tid.recordIDs[i]);
+            BTreeFile btreeFile = new BTreeFile("BTree File " + i, keyType, keySize, DeleteFashion.FULL_DELETE);
+
+            if(btreeFile != null)
             {
-                //Tuple tuple = heapfiles[i].getRecord(tid.recordIDs[i]);
-                //byte[] dataArray = tuple.returnTupleByteArray();
-                //int dataInt = Convert.getIntValue(offset, dataArray);
-                key = new IntegerKey(i);
-                //KeyDataEntry pair = new KeyDataEntry(key, tid.recordIDs[i]);
-                BTreeFile btreeFile = new BTreeFile("Int BTree File", keyType, keySize, DeleteFashion.FULL_DELETE);
                 btreeFile.insert(key, tid.recordIDs[i]);
             }
-
-            if(keyType == AttrType.attrString)
+            else
             {
-                key = new IntegerKey(i);
-                //KeyDataEntry pair = new KeyDataEntry(key, tid.recordIDs[i]);
-                BTreeFile btreeFile = new BTreeFile("String BTree File", keyType, keySize, DeleteFashion.FULL_DELETE);
-                btreeFile.insert(key, tid.recordIDs[i]);
+                return false;
             }
-
         }
         return true;
     }
