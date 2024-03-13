@@ -6,6 +6,7 @@ import heap.*;
 import iterator.*;
 import index.*;
 import java.io.*;
+import java.util.Objects;
 
 public class QueryProgram {
 
@@ -58,37 +59,113 @@ public class QueryProgram {
 
     private static void performFileScan(String columnarFileName, String[] targetColumnNames, String valueConstraint) {
         try {
-            // Define the attributes of the input fields
-            AttrType[] attrTypes = new AttrType[targetColumnNames.length];
-            short[] sSizes = new short[]{25,25}; // Assuming no string fields
-            for (int i = 0; i < targetColumnNames.length; i++) {
-                attrTypes[i] = new AttrType(AttrType.attrInteger); // Assuming all attributes are integers
+            short[] sSizes = new short[]{25,25};
+            BufferedReader br = null;
+            try {
+                br = new BufferedReader(new FileReader(columnarFileName));
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            String[] columns = new String[0];
+            try {
+                columns = br.readLine().split(" ");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
 
-            // Define the output tuple fields
+            //String[] columnNames = new String[targetColumnNames.length];
+            AttrType[] attrTypes = new AttrType[targetColumnNames.length];
+
+            for (int i = 0; i < columns.length; i++) {
+                String[] columnDetails = columns[i].split(":");
+                columns[i] = columnDetails[0];
+
+                if(columnDetails[1].equals("int"))
+                {
+                    attrTypes[i] = new AttrType(AttrType.attrInteger);
+                }
+                else
+                {
+                    attrTypes[i] = new AttrType(AttrType.attrInteger);
+                }
+            }
+
             FldSpec[] projList = new FldSpec[targetColumnNames.length];
             for (int i = 0; i < targetColumnNames.length; i++) {
                 projList[i] = new FldSpec(new RelSpec(RelSpec.outer), i + 1);
             }
 
-            // Define the condition expression
-            CondExpr[] outFilter = new CondExpr[1];
-            outFilter[0] = new CondExpr();
+            //obtains value constraints and ops
+            CondExpr[] valueConstraintExpr = new CondExpr[1];
+            String[] values = valueConstraint.split(" ");
+            String columnName = values[0];
+            int columnNum = 0;
+            String operator = values[1];
+            String value = values[2];
 
-            // Parse the value constraint string and set the condition expression
-            // Here, you need to parse the value constraint string to set the condition expression
-            // For example, you may split the valueConstraint string to get the column name, operator, and value,
-            // then set them in the outFilter array accordingly.
+            if(Objects.equals(operator, "<"))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopLT);
+            }
+            else if(Objects.equals(operator, ">"))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopGT);
+            }
+            else if(Objects.equals(operator, "="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopEQ);
+            }
+            else if(Objects.equals(operator, "!="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopNE);
+            }
+            else if(Objects.equals(operator, "<="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopLE);
+            }
+            else if(Objects.equals(operator, ">="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopGE);
+            }
 
-            // Create an instance of ColumnarFileScan
+            if(Objects.equals(columnName, "A"))
+            {
+                columnNum = 0;
+            }
+            else if(Objects.equals(columnName, "B"))
+            {
+                columnNum = 1;
+            }
+            else if(Objects.equals(columnName, "C")) {
+                columnNum = 2;
+            }
+            else if(Objects.equals(columnName, "D"))
+            {
+                columnNum = 3;
+            }
+
+            valueConstraintExpr[0].type1 = new AttrType(AttrType.attrSymbol);
+            valueConstraintExpr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), columnNum);
+
+            if(value.matches("^\\d+$"))
+            {
+                valueConstraintExpr[0].type2 = new AttrType(AttrType.attrInteger);
+                valueConstraintExpr[0].operand2.integer = Integer.parseInt(value);
+            }
+            else
+            {
+                valueConstraintExpr[0].type2 = new AttrType(AttrType.attrInteger);
+                valueConstraintExpr[0].operand2.string = value;
+            }
+
             ColumnarFileScan fileScan = new ColumnarFileScan(
-                    columnarFileName, // Columnar file name
-                    attrTypes, // Attribute types
-                    sSizes, // String sizes
-                    (short) attrTypes.length, // Number of attributes
-                    targetColumnNames.length, // Number of output fields
-                    projList, // Projection list
-                    outFilter // Output filter
+                    columnarFileName,
+                    attrTypes,
+                    sSizes,
+                    (short) attrTypes.length,
+                    targetColumnNames.length,
+                    projList,
+                    valueConstraintExpr
             );
 
             // Get tuples one by one
@@ -105,52 +182,46 @@ public class QueryProgram {
         }
     }
 
-    /*private static void performColumnScan(String columnarFileName, String[] targetColumnNames, String valueConstraint) throws IndexException, InvalidTupleSizeException, IOException, UnknownIndexTypeException, InvalidTypeException {
-        try {
-            // Initialize FldSpec[] for the output fields
-            FldSpec[] outFlds = new FldSpec[targetColumnNames.length];
-            for (int i = 0; i < targetColumnNames.length; i++) {
-                outFlds[i] = new FldSpec(new RelSpec(RelSpec.outer), i + 1);
+    private static void performColumnScan(String columnarFileName, String[] targetColumnNames, String valueConstraint) throws IndexException, InvalidTupleSizeException, IOException, UnknownIndexTypeException, InvalidTypeException, UnknownKeyTypeException {
+        // Initialize FldSpec[] for the output fields
+        FldSpec[] outFlds = new FldSpec[targetColumnNames.length];
+        for (int i = 0; i < targetColumnNames.length; i++) {
+            outFlds[i] = new FldSpec(new RelSpec(RelSpec.outer), i + 1);
+        }
+
+        // Get the attribute types and sizes from the catalog or wherever it's stored
+        AttrType[] attrTypes = new AttrType[targetColumnNames.length];
+        short[] strSizes = new short[targetColumnNames.length];
+
+        // Assuming you have a method to retrieve attribute types and sizes for the specified column names
+        // You need to implement this method based on your catalog or metadata management
+        if (columnarFileName != null) {
+            BufferedReader br = null;
+            try {
+                br = new BufferedReader(new FileReader(columnarFileName));
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            String[] columns = new String[0];
+            try {
+                columns = br.readLine().split(" ");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
 
-            // Get the attribute types and sizes from the catalog or wherever it's stored
-            AttrType[] attrTypes = new AttrType[targetColumnNames.length];
-            short[] strSizes = new short[targetColumnNames.length];
+            String[] columnNames = new String[targetColumnNames.length];
+            AttrType[] columnTypes = new AttrType[targetColumnNames.length];
 
-            // Assuming you have a method to retrieve attribute types and sizes for the specified column names
-            // You need to implement this method based on your catalog or metadata management
-            if(columnarFileName != null)
-            {
-                BufferedReader br = null;
-                try {
-                    br = new BufferedReader(new FileReader(columnarFileName));
-                } catch (FileNotFoundException e) {
-                    throw new RuntimeException(e);
+            for (int i = 0; i < columns.length; i++) {
+                String[] columnDetails = columns[i].split(":");
+                columnNames[i] = columnDetails[0];
+
+                if (columnDetails[1].equals("int")) {
+                    columnTypes[i] = new AttrType(AttrType.attrInteger);
+                } else {
+                    columnTypes[i] = new AttrType(AttrType.attrInteger);
                 }
-                String[] columns = new String[0];
-                try {
-                    columns = br.readLine().split(" ");
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-
-                String[] columnNames = new String[targetColumnNames.length];
-                AttrType[] columnTypes = new AttrType[targetColumnNames.length];
-
-                for(int i = 0; i < columns.length; i++)
-                {
-                    String[] columnDetails = columns[i].split(":");
-                    columnNames[i] = columnDetails[0];
-
-                    if(columnDetails[1].equals("int"))
-                    {
-                        columnTypes[i] = new AttrType(AttrType.attrInteger);
-                    }
-                    else
-                    {
-                        columnTypes[i] = new AttrType(AttrType.attrInteger);
-                    }
-                }
+            }
 
             // Set up other parameters
             int noInFlds = attrTypes.length;
@@ -160,74 +231,103 @@ public class QueryProgram {
                 fldNums[i] = i + 1;
             }
 
+            CondExpr[] valueConstraintExpr = new CondExpr[1];
+            String[] values = valueConstraint.split(" ");
+            String columnName = values[0];
+            int columnNum = 0;
+            String operator = values[1];
+            String value = values[2];
 
-            //TODO: REMOVE THIS, ChatGPT help for valueConstraint
-                /*CondExpr valueConstraintExpr = new CondExpr();
+            if(Objects.equals(operator, "<"))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopLT);
+            }
+            else if(Objects.equals(operator, ">"))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopGT);
+            }
+            else if(Objects.equals(operator, "="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopEQ);
+            }
+            else if(Objects.equals(operator, "!="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopNE);
+            }
+            else if(Objects.equals(operator, "<="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopLE);
+            }
+            else if(Objects.equals(operator, ">="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopGE);
+            }
 
-                // Set the operator
-                valueConstraintExpr.op = new AttrOperator(AttrOperator.aopLT); // Assuming less than
+            if(Objects.equals(columnName, "A"))
+            {
+                columnNum = 0;
+            }
+            else if(Objects.equals(columnName, "B"))
+            {
+                columnNum = 1;
+            }
+            else if(Objects.equals(columnName, "C")) {
+                columnNum = 2;
+            }
+            else if(Objects.equals(columnName, "D"))
+            {
+                columnNum = 3;
+            }
 
-                // Set the types of operands
-                valueConstraintExpr.type1 = new AttrType(AttrType.attrSymbol);
-                valueConstraintExpr.type2 = new AttrType(AttrType.attrInteger);
+            valueConstraintExpr[0].type1 = new AttrType(AttrType.attrSymbol);
+            valueConstraintExpr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), columnNum);
 
-                // Set the left operand to be the target column
-                valueConstraintExpr.operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), targetColumnIndex);
+            if(value.matches("^\\d+$"))
+            {
+                valueConstraintExpr[0].type2 = new AttrType(AttrType.attrInteger);
+                valueConstraintExpr[0].operand2.integer = Integer.parseInt(value);
+            }
+            else
+            {
+                valueConstraintExpr[0].type2 = new AttrType(AttrType.attrInteger);
+                valueConstraintExpr[0].operand2.string = value;
+            }
 
-                // Set the right operand to be the value constraint
-                valueConstraintExpr.operand2.integer = valueConstraint;
-
-                // Set the next pointer to null since this is a single condition
-                valueConstraintExpr.next = null;
-
-
-            // Initialize ColumnarIndexScan object
             ColumnarIndexScan columnarIndexScan = new ColumnarIndexScan(
                     columnarFileName,
                     fldNums,
-                    new IndexType[targetColumnNames.length],  // Assuming no indexes for now
-                    new String[targetColumnNames.length],    // Assuming no indexes for now
+                    new IndexType[targetColumnNames.length],
+                    new String[targetColumnNames.length],
                     attrTypes,
                     strSizes,
                     noInFlds,
                     noOutFlds,
                     outFlds,
-                    valueConstraint,
+                    valueConstraintExpr,
                     false  // Assuming not index only for now
             );
 
             // Perform column scan
             Tuple tuple;
             while ((tuple = columnarIndexScan.get_next()) != null) {
-                // Process each retrieved tuple
-                // You can print it or do other operations as needed
                 System.out.println(tuple);
             }
 
-            // Close the column scan
             columnarIndexScan.close();
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-    }*/
+    }
 
-    private static void performBTreeScan(String columnarFileName, String[] targetColumnNames, String valueConstraint) {
+        private static void performBTreeScan(String columnarFileName, String[] targetColumnNames, String valueConstraint) {
         try {
-            // Open the B-tree index file
             BTreeFile btreeFile = new BTreeFile(columnarFileName);
-
-            // Initialize the B-tree scan
             BTFileScan btreeScan = btreeFile.new_scan(null, null);
 
             // Iterate over the B-tree index entries
             KeyDataEntry entry;
             while ((entry = btreeScan.get_next()) != null) {
-                // Extract key and data from the entry
                 IntegerKey key = (IntegerKey) entry.key;
                 RID rid = ((LeafData) entry.data).getData();
 
-                // Process the entry according to your query requirements
-                // For example, you can print the key and RID
                 System.out.println("Key: " + key.getKey() + ", RID: " + rid.toString());
             }
 
