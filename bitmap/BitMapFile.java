@@ -6,12 +6,10 @@ import bufmgr.*;
 import global.*;
 import columnar.*;
 import value.*;
+import diskmgr.*;
 
-public class BitMapFile extends IndexFile
+public class BitMapFile
 		implements GlobalConst {
-	private final static int MAGIC0 = 2024;
-	private final static String lineSep = System.getProperty("line.separator");
-
 	private static FileOutputStream fos;
 	private static DataOutputStream trace;
 
@@ -20,8 +18,8 @@ public class BitMapFile extends IndexFile
 	private String dbname;
 
 	public BitMapFile(java.lang.String filename)
-			throws GetFileEntryException, 
-			PinPageException, 
+			throws GetFileEntryException,
+			PinPageException,
 			ConstructPageException {
 		headerPageId = get_file_entry(filename);
 		headerPage = new BitMapHeaderPage(headerPageId);
@@ -39,20 +37,30 @@ public class BitMapFile extends IndexFile
 			headerPage = new BitMapHeaderPage();
 			headerPageId = headerPage.getPageId();
 			add_file_entry(filename, headerPageId);
-			headerPage.set_magic0(MAGIC0);
-			headerPage.set_rootId(new PageId(INVALID_PAGE));
-		} else {
+		} else
 			headerPage = new BitMapHeaderPage(headerPageId);
-		}
 
 		dbname = new String(filename);
 
-		if (columnfile.type[ColumnNo] == new AttrType(AttrType.attrInteger)) {
-			headerPage.set_keyType();
-		} else if (columnfile.type[ColumnNo] == new AttrType(AttrType.attrString)) {
+		Page page = new Page();
 
-		} 
+		if (value instanceof IntegerValueClass) {
+			headerPage.set_keyType((short) 0);
+			
+		} else if (value instanceof StringValueClass) {
+			headerPage.set_keyType((short) 1);;
+			
+		}
 
+		// TODO: initalize the page with the columnarfile based on the columnno
+		page.setpage(null);
+		
+
+		BMPage bmPage = new BMPage(page);
+		bmPage.setNextPage(new PageId(INVALID_PAGE));
+		bmPage.setPrevPage(headerPageId);
+
+		headerPage.setNextPage(bmPage.getCurPage());
 	}
 
 	public static void traceFilename(String filename)
@@ -113,24 +121,53 @@ public class BitMapFile extends IndexFile
 	}
 
 	public boolean Delete(int position) {
-		// Set the entry at the given position to 0
+		try {
 
-		return true;
+			
+
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
 	}
 
-	public boolean Delete(KeyClass key, RID rid) {
+	public boolean Insert(int position) 
+		throws IOException
+	{
+		try {
+			int key = (int) headerPage.get_keyType();
 
-		return true;
-	}
+			BMPage page = new BMPage();
+			PageId nextpageno = headerPage.getNextPage();
 
-	public boolean Insert(int position) {
-		// Set the entry at the given position to 1
+			while (nextpageno.pid != INVALID_PAGE) {
+				page.setCurPage(nextpageno);
+				nextpageno = page.getNextPage();
+			}
 
-		return true;
-	}
+			byte[] data = new byte[2];
 
-	public void insert(KeyClass key, RID rid) {
+			int byteIndex = position / 8;
+			int bitIndex = position % 8;
+			data[byteIndex] |= 1 << bitIndex;
 
+			if ((key == 0 && page.available_space() >= 2) || (key == 1 && page.available_space() >= 4)) {
+				// Page exists with space
+				page.writeBMPageArray(data);
+			} else {
+				// Need to add a new page
+				BMPage newpage = new BMPage();
+				page.setNextPage(newpage.getCurPage());
+				newpage.setPrevPage(page.getCurPage());
+				newpage.writeBMPageArray(data);
+			}
+
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
 	}
 
 	private bitmap.BitMapHeaderPage getHeaderPage() {
