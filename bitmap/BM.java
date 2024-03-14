@@ -15,15 +15,24 @@ public class BM implements GlobalConst {
 			InvalidFrameNumberException,
 			PageUnpinnedException,
 			ReplacerException {
-		if (header.get_rootId().pid == INVALID_PAGE) {
+		if (header.getNextPage().pid == INVALID_PAGE) {
 			System.out.println("The Bitmap is Empty!!!");
 			return;
 		}
+
+		BMPage page = new BMPage();
+		PageId nextpageno = header.getNextPage();
 
 		System.out.println("");
 		System.out.println("");
 		System.out.println("");
 		System.out.println("---------------The Bitmap---------------");
+		
+		while (nextpageno.pid != INVALID_PAGE) {
+				page.setCurPage(nextpageno);
+				page.dumpPage();
+				nextpageno = page.getNextPage();
+			}
 
 		System.out.println("------------------ End -----------------");
 	}
