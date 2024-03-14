@@ -46,15 +46,13 @@ public class BitMapFile
 
 		if (value instanceof IntegerValueClass) {
 			headerPage.set_keyType((short) 0);
-			
+
 		} else if (value instanceof StringValueClass) {
-			headerPage.set_keyType((short) 1);;
-			
+			headerPage.set_keyType((short) 1);
 		}
 
 		// TODO: initalize the page with the columnarfile based on the columnno
 		page.setpage(null);
-		
 
 		BMPage bmPage = new BMPage(page);
 		bmPage.setNextPage(new PageId(INVALID_PAGE));
@@ -100,7 +98,7 @@ public class BitMapFile
 			ConstructPageException,
 			PinPageException {
 		if (headerPage != null) {
-			PageId pgId = headerPage.get_rootId();
+			PageId pgId = headerPage.getPageId();
 			if (pgId.pid != INVALID_PAGE)
 				_destroyFile(pgId);
 			unpinPage(headerPageId);
@@ -117,13 +115,26 @@ public class BitMapFile
 			ConstructPageException,
 			UnpinPageException,
 			FreePageException {
+		BMPage page = new BMPage();
 
+		page.setCurPage(pageno);
+
+		PageId nextpageno = pageno;
+		PageId deletepageno;
+
+		while (nextpageno.pid != INVALID_PAGE) {
+			deletepageno = page.getCurPage();
+			
+			page.setCurPage(nextpageno);
+			nextpageno = page.getNextPage();
+
+			freePage(deletepageno);
+			unpinPage(deletepageno);
+		}
 	}
 
 	public boolean Delete(int position) {
 		try {
-
-			
 
 			return true;
 		} catch (Exception e) {
@@ -132,9 +143,8 @@ public class BitMapFile
 		}
 	}
 
-	public boolean Insert(int position) 
-		throws IOException
-	{
+	public boolean Insert(int position)
+			throws IOException {
 		try {
 			int key = (int) headerPage.get_keyType();
 
@@ -155,6 +165,7 @@ public class BitMapFile
 			if ((key == 0 && page.available_space() >= 2) || (key == 1 && page.available_space() >= 4)) {
 				// Page exists with space
 				page.writeBMPageArray(data);
+
 			} else {
 				// Need to add a new page
 				BMPage newpage = new BMPage();
