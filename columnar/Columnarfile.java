@@ -1,11 +1,13 @@
 package columnar;
 
+import btree.BTIndexPage;
 import global.AttrType;
 import global.Convert;
 import global.RID;
 import heap.*;
 import TID.*;
 import value.*;
+import btree.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -64,30 +66,43 @@ public class Columnarfile
     }
 
     // Inserts a new tuple into the columnar file
-    public TID insertTuple(byte[] tuplePtr) throws Exception {
-        //I don't know where split tuple is coming from - jaesang
-        //Need to insert based on attribute type - jaesang
-        byte[][] columnValues = splitTuple(tuplePtr, this.type);
+    public TID insertTuple(byte[] tuplePtr) throws Exception
+    {
+        //Number of records in a tuple = number of columns
         TID tid = new TID(numColumns);
-        for (int i = 0; i < numColumns; i++)
+        tid.numRIDs = numColumns;
+        int offset = 0;
+
+        //For each type
+        for(int i = 0; i < type.length; i++)
         {
-            RID rid = heapfiles[i].insertRecord(columnValues[i]);
-            if (rid == null)
+            //Check attribute type and convert data accordingly
+            if (type[i].attrType == AttrType.attrInteger)
             {
-                throw new Exception("Insertion failed for column " + i);
+                int dataInt = Convert.getIntValue(offset, tuplePtr);
+                byte[] newData = new byte[4];
+                Convert.setIntValue(dataInt, offset, newData);
+                offset = offset + 4;
+
+                tid.recordIDs[i] = heapfiles[i].insertRecord(newData);
             }
+            if (type[i].attrType == AttrType.attrString)
+            {
+                String dataStr = Convert.getStrValue(offset, tuplePtr, tuplePtr[i]);
+                byte[] newData = new byte[3];
+                Convert.setStrValue(dataStr, offset, newData);
+                offset = offset + 3;
 
-
-            tid.recordIDs[i] = rid;
+                tid.recordIDs[i] = heapfiles[i].insertRecord(newData);
+            }
         }
         return tid;
-
     }
 
     public Tuple getTuple(TID tid) throws Exception {
         //new tuple must contain byte array which contains data, offset, and length of byte array
         Tuple result = new Tuple();
-        byte[] resultData = new byte[0];
+        byte[] resultData = new byte[numColumns];
         int offset = 0;
 
         //For each column (since each column contains a heapfile)
@@ -102,25 +117,18 @@ public class Columnarfile
             if(type[i].attrType == AttrType.attrInteger)
             {
                 int dataInt = Convert.getIntValue(offset, data);
+                resultData = new byte[4];
                 Convert.setIntValue(dataInt, offset, resultData);
                 offset += 4;
-                //Write data array associated with rid to new byte array
 
             }
-
             if(type[i].attrType == AttrType.attrString)
             {
-                // Not sure how to get string length for conversion - jaesang
+                // Not sure how to get string length for conversion - jaesan
                 String dataString = Convert.getStrValue(offset, data, data[i]);
+                resultData = new byte[data[i]];
                 Convert.setStrValue(dataString, offset, resultData);
                 offset += dataString.length();
-            }
-
-            if(type[i].attrType == AttrType.attrReal)
-            {
-                float dataFloat = Convert.getFloValue(offset, data);
-                Convert.setFloValue(dataFloat, offset, resultData);
-                offset += 4;
             }
 
             //Update tuple with resulting data
@@ -132,8 +140,8 @@ public class Columnarfile
     public ValueClass getValue(TID tid, int column) throws Exception
     {
         ValueClass result = null;
-        IntegerValueClass integer = null;
-        StringValueClass string = null;
+        IntegerValueClass integer = new IntegerValueClass();
+        StringValueClass string = new StringValueClass();
 
         Tuple tuple = heapfiles[column].getRecord(tid.recordIDs[column]);
         byte[] data = tuple.returnTupleByteArray();
@@ -154,14 +162,7 @@ public class Columnarfile
     }
 
     public int getTupleCnt() throws HFDiskMgrException, InvalidSlotNumberException, InvalidTupleSizeException, HFBufMgrException, IOException {
-        int count = 0;
-
-        for(int i = 0; i < heapfiles.length; i++)
-        {
-            count += heapfiles[i].getRecCnt();
-        }
-
-        return count;
+        return  heapfiles[0].getRecCnt();
     }
 
     public TupleScan openTupleScan() throws InvalidTupleSizeException, IOException {
@@ -174,44 +175,61 @@ public class Columnarfile
         return scan;
     }
 
-    public boolean updateTuple(TID tid, heap.Tuple newtuple)
-    {
-        int i = 0;
-
-		for (;i<numberOfColumns;i++) {
-			if(!updateColumnofTuple(tid,newtuple,i+1))
-				return false;
-		}
-		return true;
+    public boolean updateTuple(TID tid, Tuple newtuple) throws Exception {
+        for (int i = 0; i < numColumns; i++) {
+            if(!updateColumnofTuple(tid, newtuple, i))
+                return false;
+        }
+        return true;
     }
 
-    public boolean updateColumnofTuple(TID tid, heap.Tuple newtuple, int column)
-    {
-        int intValue;
-		String strValue;
-		Tuple tuple = null;
-		try {
-			if (attributeType[column-1].attrType == AttrType.attrInteger)	{
-				intValue = newtuple.getIntFld(column);
-				tuple = new Tuple(4);
-				tuple.setIntFld(1, intValue);
-			}
-			else if (attributeType[column-1].attrType == AttrType.attrString)	{
-				strValue = newtuple.getStrFld(column);
-				tuple = new Tuple(stringSize);
-				tuple.setStrFld(1, strValue);
-			}
+    public boolean updateColumnofTuple(TID tid, Tuple newtuple, int column) throws Exception {
+        boolean result = false;
 
-			return heapFileColumns[column-1].updateRecord(tid.recordIDs[column-1], tuple);
+        if (type[column].attrType == AttrType.attrInteger)	{
+            int dataInt = newtuple.getIntFld(column);
+            Tuple tuple = new Tuple(4);
+            tuple.setIntFld(column, dataInt);
+            result = heapfiles[column].updateRecord(tid.recordIDs[column], tuple);
 
-		}catch (Exception e)	{
-			e.printStackTrace();
-		}
-		return false;
+        }
+        else if (type[column].attrType == AttrType.attrString)	{
+            String dataStr = newtuple.getStrFld(column);
+            Tuple tuple = new Tuple(dataStr.length());
+            tuple.setStrFld(column, dataStr);
+            result = heapfiles[column].updateRecord(tid.recordIDs[column], tuple);
+        }
+
+        return result;
     }
 
-    public boolean createBTreeIndex(int column)
+    public boolean createBTreeIndex(int column) throws Exception
     {
+        KeyClass key = null;
+        TID tid = new TID(numColumns);
+        int keyType = 0;
+        int keySize = 4;
+        //int offset = 0;
+
+        for(int i = 0; i < numColumns; i++)
+        {
+            keyType = type[i].attrType;
+            //Tuple tuple = heapfiles[i].getRecord(tid.recordIDs[i]);
+            //byte[] dataArray = tuple.returnTupleByteArray();
+            //int dataInt = Convert.getIntValue(offset, dataArray);
+            key = new IntegerKey(i);
+            //KeyDataEntry pair = new KeyDataEntry(key, tid.recordIDs[i]);
+            BTreeFile btreeFile = new BTreeFile("BTree File " + i, keyType, keySize, DeleteFashion.FULL_DELETE);
+
+            if(btreeFile != null)
+            {
+                btreeFile.insert(key, tid.recordIDs[i]);
+            }
+            else
+            {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -220,52 +238,51 @@ public class Columnarfile
         return true;
     }
 
-    public boolean markTupleDeleted(TID tid)
-    {
-        byte[] deletedTids = new byte[numberOfColumns*4*2];
+    public boolean markTupleDeleted(TID tid) throws Exception {
+        Heapfile deletedTuples = new Heapfile("Deleted Tuples");
+        Tuple tidTuple = new Tuple();
+        Tuple deletedTuple = new Tuple();
+        byte[] deletedTid = new byte[numColumns];
+        int offset = 0;
 
-		int i = 0;
-		int offset = 0;
-		int tidOffset = 0;
+        //Delete all records associate with that tid and add those tuples to a heapfile
+        for (int i = 0; i < type.length; i++)
+        {
+            if(type[i].attrType == AttrType.attrInteger)
+            {
+                tidTuple = heapfiles[i].getRecord(tid.recordIDs[i]);
+                deletedTid = tidTuple.returnTupleByteArray();
+                int dataInt = Convert.getIntValue(offset, deletedTid);
+                deletedTid = new byte[4];
+                Convert.setIntValue(dataInt, offset, deletedTid);
+                deletedTuple.tupleSet(deletedTid, offset, deletedTid.length);
+                offset = offset + 4;
 
+                if(!heapfiles[i].deleteRecord(tid.recordIDs[i]))
+                    return false;
+            }
+            else if(type[i].attrType == AttrType.attrString)
+            {
+                tidTuple = heapfiles[i].getRecord(tid.recordIDs[i]);
+                deletedTid = tidTuple.returnTupleByteArray();
+                //String length?
+                String dataString = Convert.getStrValue(offset, deletedTid, deletedTid[i]);
+                deletedTid = new byte[dataString.length()];
+                Convert.setStrValue(dataString, offset, deletedTid);
+                deletedTuple.tupleSet(deletedTid, offset, deletedTid.length);
+                offset = offset + dataString.length();
 
-		try{
-			for (AttrType attr: attributeType) {
-				if(attr.attrType == AttrType.attrInteger)
-				{
-					Convert.setIntValue(tid.recordIDs[i].pageNo.pid, tidOffset, deletedTids);
-					Convert.setIntValue(tid.recordIDs[i].slotNo, tidOffset + 4, deletedTids);
-
-					offset = offset + 4;
-					tidOffset = tidOffset + 8;
-					if(!heapFileColumns[i].deleteRecord(tid.recordIDs[i]))
-						return false;
-					i++;
-				}
-				else if(attr.attrType == AttrType.attrString)
-				{
-					Convert.setIntValue(tid.recordIDs[i].pageNo.pid, tidOffset, deletedTids);
-					Convert.setIntValue(tid.recordIDs[i].slotNo, tidOffset + 4, deletedTids);
-
-					offset = offset + stringSize;
-					tidOffset = tidOffset + 8;
-					if(!heapFileColumns[i].deleteRecord(tid.recordIDs[i]))
-						return false;
-					i++;
-				}
-			}
-			deletedTupleList.insertRecord(deletedTids);
-			this.deleteCount++;
-			return true;
-		}catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-		return false;
+                if(!heapfiles[i].deleteRecord(tid.recordIDs[i]))
+                    return false;
+            }
+        }
+        deletedTuples.insertRecord(deletedTid);
+        return true;
     }
 
-    public boolean purgeAllDeletedTuples()
-    {
-        return false;
+    public boolean purgeAllDeletedTuples() throws HFDiskMgrException, HFException, HFBufMgrException, IOException, InvalidSlotNumberException, InvalidTupleSizeException, FileAlreadyDeletedException {
+        Heapfile deletedTuples = new Heapfile("Deleted Tuples");
+        deletedTuples.deleteFile();
+        return true;
     }
 }

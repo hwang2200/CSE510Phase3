@@ -54,10 +54,6 @@ public class TupleScan
                 Tuple tuple = s.getNext(tid.recordIDs[i]);
 
                 //For each record id in that tid, check its type (associated with type array in cf) and set it in the tuple we are returning
-                if(_cf.type[i].attrType == AttrType.attrSymbol || _cf.type[i].attrType == AttrType.attrNull)
-                {
-                    continue;
-                }
                 if(_cf.type[i].attrType == AttrType.attrInteger)
                 {
                     nextTID.setIntFld(i, tuple.getIntFld(i));
@@ -65,10 +61,6 @@ public class TupleScan
                 if(_cf.type[i].attrType == AttrType.attrString)
                 {
                     nextTID.setStrFld(i, tuple.getStrFld(i));
-                }
-                if(_cf.type[i].attrType == AttrType.attrReal)
-                {
-                    nextTID.setFloFld(i, tuple.getFloFld(i));
                 }
             }
         }

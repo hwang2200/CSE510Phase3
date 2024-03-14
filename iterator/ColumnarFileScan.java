@@ -45,12 +45,12 @@ public class ColumnarFileScan extends  Iterator
      *@exception InvalidRelation invalid relation
      */
     public  ColumnarFileScan (String  file_name,
-                      AttrType in1[],
-                      short s1_sizes[],
-                      short     len_in1,
-                      int n_out_flds,
-                      FldSpec[] proj_list,
-                      CondExpr[]  outFilter
+                              AttrType in1[],
+                              short s1_sizes[],
+                              short     len_in1,
+                              int n_out_flds,
+                              FldSpec[] proj_list,
+                              CondExpr[]  outFilter
     )
             throws IOException,
             FileScanException,
@@ -154,5 +154,4 @@ public class ColumnarFileScan extends  Iterator
     }
 
 }
-
 
