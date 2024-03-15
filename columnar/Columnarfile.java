@@ -42,14 +42,9 @@ public class Columnarfile {
 
     // Deletes all the column files and the metadata file associated with this
     // columnar file
-    void deleteColumnarFile() throws IOException {
-        for (int i = 0; i < numColumns; i++) {
-            File columnFile = new File(this.name + ".columnid" + i);
-            if (columnFile.exists()) {
-                if (!columnFile.delete()) {
-                    throw new IOException("Failed to delete column file: " + columnFile.getName());
-                }
-            }
+    void deleteColumnarFile() throws IOException, HFDiskMgrException, InvalidSlotNumberException, InvalidTupleSizeException, HFBufMgrException, FileAlreadyDeletedException {
+        for (int i = 0; i < heapfiles.length; i++) {
+            heapfiles[i].deleteFile();
         }
 
         File metadataFile = new File(this.name + ".hdr");
