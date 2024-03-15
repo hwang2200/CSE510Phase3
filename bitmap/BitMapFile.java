@@ -181,7 +181,7 @@ public class BitMapFile
 		}
 	}
 
-	private bitmap.BitMapHeaderPage getHeaderPage() {
+	public bitmap.BitMapHeaderPage getHeaderPage() {
 		return headerPage;
 	}
 

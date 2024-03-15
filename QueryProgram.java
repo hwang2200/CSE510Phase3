@@ -1,4 +1,7 @@
+import bitmap.BMPage;
+import bitmap.BitMapFile;
 import btree.*;
+import columnar.Columnarfile;
 import global.*;
 import bufmgr.*;
 import diskmgr.*;
@@ -8,10 +11,14 @@ import index.*;
 import java.io.*;
 import java.util.Objects;
 import java.util.Scanner;
+import TID.TID;
+
+import static global.GlobalConst.INVALID_PAGE;
 
 public class QueryProgram {
 
     public static void main(String[] args) {
+        PCounter.initialize();
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("Welcome to QueryProgram!");
@@ -370,6 +377,62 @@ public class QueryProgram {
     }
 
     private static void performBitmapScan(String columnarFileName, String[] targetColumnNames, String valueConstraint) {
-        // Implement bitmap scan query
+        try {
+            String[] columnNames = new String[targetColumnNames.length];
+            AttrType[] columnTypes = new AttrType[targetColumnNames.length];
+
+            for (int i = 0; i < targetColumnNames.length; i++) {
+                String[] columnDetails = targetColumnNames[i].split(":");
+                columnNames[i] = columnDetails[0];
+
+                if (columnDetails[1].equals("int")) {
+                    columnTypes[i] = new AttrType(AttrType.attrInteger);
+                } else {
+                    columnTypes[i] = new AttrType(AttrType.attrString);
+                }
+            }
+            Columnarfile columnarFile = new Columnarfile(columnarFileName, targetColumnNames.length, columnTypes);
+
+            // Open the bitmap file for the specified column
+            BitMapFile bitmapFile = new BitMapFile(columnarFileName);
+
+            BMPage page = new BMPage();
+            PageId nextPageId = bitmapFile.getHeaderPage().getNextPage();
+            while (nextPageId.pid != INVALID_PAGE) {
+                page.setCurPage(nextPageId);
+
+                // Read the bitmap data directly from the page
+                byte[] bmPageData = page.getpage();
+
+                // Iterate over each bit in the bitmap page
+                for (int i = 0; i < bmPageData.length * 8; i++) {
+                    if ((bmPageData[i / 8] & (1 << (i % 8))) != 0) { // Check if the bit is set
+                        // Create a TID from the RID
+                        TID tid = new TID(targetColumnNames.length);
+                        tid.numRIDs = targetColumnNames.length;
+                        tid.recordIDs = new RID[targetColumnNames.length];
+                        for (int j = 0; j < targetColumnNames.length; j++) {
+                            RID rid = new RID(new PageId(page.getCurPage().pid), i);
+                            tid.recordIDs[j] = rid;
+                        }
+                        // Retrieve the tuple using the TID
+                        Tuple tuple = columnarFile.getTuple(tid);
+                        System.out.println(tuple);
+                    }
+                }
+
+                nextPageId = page.getNextPage();
+            }
+
+            bitmapFile.close(); // Close the bitmap file after scanning
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
+
+
+
+
+
 }
