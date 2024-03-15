@@ -44,7 +44,7 @@ public class Columnarfile {
     // columnar file
     void deleteColumnarFile() throws IOException, HFDiskMgrException, InvalidSlotNumberException, InvalidTupleSizeException, HFBufMgrException, FileAlreadyDeletedException {
         for (int i = 0; i < heapfiles.length; i++) {
-            heapfiles[i].DSdeleteFile();
+            heapfiles[i].deleteFile();
         }
 
         File metadataFile = new File(this.name + ".hdr");

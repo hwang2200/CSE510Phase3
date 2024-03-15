@@ -433,10 +433,4 @@ public class QueryProgram {
             e.printStackTrace();
         }
     }
-
-
-
-
-
-
 }

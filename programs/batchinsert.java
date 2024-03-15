@@ -42,7 +42,7 @@ public class batchinsert
                 if (columnDetails[1].equals("int")) {
                     columnTypes[i] = new AttrType(AttrType.attrInteger);
                 } else {
-                    columnTypes[i] = new AttrType(AttrType.attrInteger);
+                    columnTypes[i] = new AttrType(AttrType.attrString);
                 }
             }
 
