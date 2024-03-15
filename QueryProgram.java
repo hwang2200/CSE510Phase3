@@ -1,4 +1,7 @@
+import bitmap.BMPage;
+import bitmap.BitMapFile;
 import btree.*;
+import columnar.Columnarfile;
 import global.*;
 import bufmgr.*;
 import diskmgr.*;
@@ -7,21 +10,56 @@ import iterator.*;
 import index.*;
 import java.io.*;
 import java.util.Objects;
+import java.util.Scanner;
+import TID.TID;
+
+import static global.GlobalConst.INVALID_PAGE;
 
 public class QueryProgram {
 
     public static void main(String[] args) {
-        if (args.length < 6) {
-            System.err.println("Usage: java QueryProgram COLUMNDBNAME COLUMNARFILENAME [TARGETCOLUMNNAMES] VALUECONSTRAINT NUMBUF ACCESSTYPE");
+        PCounter.initialize();
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Welcome to QueryProgram!");
+        System.out.println("Please enter in a query in the format: COLUMNDBNAME COLUMNARFILENAME [TARGETCOLUMNNAMES] VALUECONSTRAINT NUMBUF ACCESSTYPE");
+
+        System.out.println("Please enter in the Name of the Column DB: ");
+        String colDBName = scanner.nextLine();
+
+        System.out.println("Please enter in the Column File Name: ");
+        String colFileName = scanner.nextLine();
+
+        System.out.println("Please enter in the Target Column Names separated by spaces (all in one line): ");
+        String targetColsLine = scanner.nextLine();
+        String[] targetCols = targetColsLine.split("\\s+");
+
+        System.out.println("Please enter in the Value Constraint of the form {COLUMNNAME OPERATOR VALUE}: ");
+        String valConstraint = scanner.nextLine();
+
+        System.out.println("Please enter in the NUMBUF: ");
+        String nBuf = scanner.nextLine();
+
+        System.out.println("Please enter in the Access Type (\"FILESCAN\", \"COLUMNSCAN\", \"BTREE\", or \"BITMAP\": ");
+        String accessType = scanner.nextLine();
+
+        String[] queryArgs = {colDBName, colFileName, valConstraint, nBuf, accessType};
+        performFileScan(queryArgs, targetCols);
+
+        scanner.close();
+    }
+
+    private static void performFileScan(String[] args, String[] targetColNames) {
+        if (args.length < 5 || targetColNames.length < 1) {
+            System.err.println("Usage: COLUMNDBNAME COLUMNARFILENAME [TARGETCOLUMNNAMES] VALUECONSTRAINT NUMBUF ACCESSTYPE");
             System.exit(1);
         }
 
         String columnDBName = args[0];
         String columnarFileName = args[1];
-        String[] targetColumnNames = args[2].split(",");
-        String valueConstraint = args[3];
-        int numBuf = Integer.parseInt(args[4]);
-        String accessType = args[5];
+        String valueConstraint = args[2];
+        int numBuf = Integer.parseInt(args[3]);
+        String accessType = args[4];
 
         try {
 
@@ -30,16 +68,16 @@ public class QueryProgram {
             // Perform the query based on the access type
             switch (accessType.toUpperCase()) {
                 case "FILESCAN":
-                    performFileScan(columnarFileName, targetColumnNames, valueConstraint);
+                    performFileScan(columnarFileName, targetColNames, valueConstraint);
                     break;
                 case "COLUMNSCAN":
-                    performColumnScan(columnarFileName, targetColumnNames, valueConstraint);
+                    performColumnScan(columnarFileName, targetColNames, valueConstraint);
                     break;
                 case "BTREE":
-                    performBTreeScan(columnarFileName, targetColumnNames, valueConstraint);
+                    performBTreeScan(columnarFileName, targetColNames, valueConstraint);
                     break;
                 case "BITMAP":
-                    performBitmapScan(columnarFileName, targetColumnNames, valueConstraint);
+                    performBitmapScan(columnarFileName, targetColNames, valueConstraint);
                     break;
                 default:
                     System.err.println("Invalid access type");
@@ -339,6 +377,62 @@ public class QueryProgram {
     }
 
     private static void performBitmapScan(String columnarFileName, String[] targetColumnNames, String valueConstraint) {
-        // Implement bitmap scan query
+        try {
+            String[] columnNames = new String[targetColumnNames.length];
+            AttrType[] columnTypes = new AttrType[targetColumnNames.length];
+
+            for (int i = 0; i < targetColumnNames.length; i++) {
+                String[] columnDetails = targetColumnNames[i].split(":");
+                columnNames[i] = columnDetails[0];
+
+                if (columnDetails[1].equals("int")) {
+                    columnTypes[i] = new AttrType(AttrType.attrInteger);
+                } else {
+                    columnTypes[i] = new AttrType(AttrType.attrString);
+                }
+            }
+            Columnarfile columnarFile = new Columnarfile(columnarFileName, targetColumnNames.length, columnTypes);
+
+            // Open the bitmap file for the specified column
+            BitMapFile bitmapFile = new BitMapFile(columnarFileName);
+
+            BMPage page = new BMPage();
+            PageId nextPageId = bitmapFile.getHeaderPage().getNextPage();
+            while (nextPageId.pid != INVALID_PAGE) {
+                page.setCurPage(nextPageId);
+
+                // Read the bitmap data directly from the page
+                byte[] bmPageData = page.getpage();
+
+                // Iterate over each bit in the bitmap page
+                for (int i = 0; i < bmPageData.length * 8; i++) {
+                    if ((bmPageData[i / 8] & (1 << (i % 8))) != 0) { // Check if the bit is set
+                        // Create a TID from the RID
+                        TID tid = new TID(targetColumnNames.length);
+                        tid.numRIDs = targetColumnNames.length;
+                        tid.recordIDs = new RID[targetColumnNames.length];
+                        for (int j = 0; j < targetColumnNames.length; j++) {
+                            RID rid = new RID(new PageId(page.getCurPage().pid), i);
+                            tid.recordIDs[j] = rid;
+                        }
+                        // Retrieve the tuple using the TID
+                        Tuple tuple = columnarFile.getTuple(tid);
+                        System.out.println(tuple);
+                    }
+                }
+
+                nextPageId = page.getNextPage();
+            }
+
+            bitmapFile.close(); // Close the bitmap file after scanning
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
+
+
+
+
+
 }
