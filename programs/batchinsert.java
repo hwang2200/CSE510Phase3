@@ -2,6 +2,7 @@ package programs;
 
 import columnar.Columnarfile;
 import diskmgr.ColumnDB;
+import diskmgr.PCounter;
 import global.AttrType;
 import global.Convert;
 import heap.HFBufMgrException;
@@ -13,6 +14,7 @@ import java.io.*;
 public class batchinsert
 {
     public static void main(String[] args) throws Exception {
+        PCounter.initialize();
         if (args.length != 4) {
             System.out.println("Usage: java BatchInsert DATAFILENAME COLUMNDBNAME COLUMNARFILENAME NUMCOLUMNS");
             System.exit(1);
@@ -25,7 +27,7 @@ public class batchinsert
 
         if (datafileName != null || columnarfileName != null) {
             ColumnDB cDB = new ColumnDB();
-            cDB.openColumnDB(columnDBName);
+            cDB.openDB(columnDBName);
             
             BufferedReader br = new BufferedReader(new FileReader(datafileName));
             String[] columns = br.readLine().split(" ");
@@ -64,6 +66,10 @@ public class batchinsert
                 cf.insertTuple(dataFileArray);
             }
             br.close();
+
+            // Print out the number of disk pages read and written
+            System.out.println("Number of disk pages read: " + PCounter.getReadCount());
+            System.out.println("Number of disk pages written: " + PCounter.getWriteCount());
         }
     }
 }

@@ -251,6 +251,13 @@ public class HFPage extends Page
       Convert.setIntValue (curPage.pid, CUR_PAGE, data);
     }
   
+  public void setCurPage_forGivenPosition(int position)
+    throws IOException{
+      int pageNo = position / freeSpace;
+      PageId goToPage = new PageId();
+      goToPage.pid = pageNo;
+      setCurPage(goToPage);
+    }
   /**
    * @return 	the ype
    * @exception IOException I/O errors

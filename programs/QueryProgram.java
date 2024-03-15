@@ -1,9 +1,10 @@
+package programs;
+
 import bitmap.BMPage;
 import bitmap.BitMapFile;
 import btree.*;
 import columnar.Columnarfile;
 import global.*;
-import bufmgr.*;
 import diskmgr.*;
 import heap.*;
 import iterator.*;
@@ -12,6 +13,9 @@ import java.io.*;
 import java.util.Objects;
 import java.util.Scanner;
 import TID.TID;
+import java.io.BufferedReader;
+import java.io.FileReader;
+
 
 import static global.GlobalConst.INVALID_PAGE;
 
@@ -21,7 +25,7 @@ public class QueryProgram {
         PCounter.initialize();
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("Welcome to QueryProgram!");
+        System.out.println("Welcome to programs.QueryProgram!");
         System.out.println("Please enter in a query in the format: COLUMNDBNAME COLUMNARFILENAME [TARGETCOLUMNNAMES] VALUECONSTRAINT NUMBUF ACCESSTYPE");
 
         System.out.println("Please enter in the Name of the Column DB: ");
@@ -64,7 +68,7 @@ public class QueryProgram {
         try {
 
             ColumnDB testDB = new ColumnDB();
-            testDB.openColumnDB(columnDBName);
+            testDB.openDB(columnDBName);
             // Perform the query based on the access type
             switch (accessType.toUpperCase()) {
                 case "FILESCAN":
