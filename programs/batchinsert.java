@@ -1,6 +1,7 @@
 package programs;
 
 import columnar.Columnarfile;
+import diskmgr.ColumnDB;
 import global.AttrType;
 import global.Convert;
 import heap.HFBufMgrException;
@@ -23,6 +24,9 @@ public class batchinsert
         int numColumns = Integer.parseInt(args[3]);
 
         if (datafileName != null || columnarfileName != null) {
+            ColumnDB cDB = new ColumnDB();
+            cDB.openColumnDB(columnDBName);
+            
             BufferedReader br = new BufferedReader(new FileReader(datafileName));
             String[] columns = br.readLine().split(" ");
 
