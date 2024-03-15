@@ -18,7 +18,32 @@ import java.util.Scanner;
 import java.io.*;
 
 public class index {
-    public static void main(String[] args) throws Exception {
+
+    public static void main(String[] args) {
+        PCounter.initialize();
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Welcome to programs.index!");
+        System.out.println("Please enter in a query in the format: COLUMNDBNAME COLUMNARFILENAME COLUMNAME INDEXTYPE");
+
+        System.out.println("Please enter in the Name of the Column DB: ");
+        String colDBName = scanner.nextLine();
+
+        System.out.println("Please enter in the Column File Name: ");
+        String colFileName = scanner.nextLine();
+
+        System.out.println("Please enter in the Target Column Name: ");
+        String columnName = scanner.nextLine();
+
+        System.out.println("Please enter in the Index Type (\"BTREE\", or \"BITMAP\": ");
+        String indexType = scanner.nextLine();
+
+        String[] queryArgs = {colDBName, colFileName, columnName, indexType};
+        indexStart(queryArgs);
+
+        scanner.close();
+    }
+    public static void indexStart(String[] args){
         PCounter.initialize();
         Scanner scanner = new Scanner(System.in);
         if (args.length != 4) { // checks length
@@ -29,7 +54,7 @@ public class index {
         String columnDBName = args[0];
         String columnarfileName = args[1];
         String columnName = args[2];
-        String indexType = args[3];
+        String indexType = (args[3]).toUpperCase();
 
         try {
             ColumnDB testDB = new ColumnDB();   // open columnDB and type of index
