@@ -1,3 +1,5 @@
+package programs;
+
 import bitmap.BMPage;
 import bitmap.BitMapFile;
 import btree.*;
@@ -21,7 +23,7 @@ public class QueryProgram {
         PCounter.initialize();
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("Welcome to QueryProgram!");
+        System.out.println("Welcome to programs.QueryProgram!");
         System.out.println("Please enter in a query in the format: COLUMNDBNAME COLUMNARFILENAME [TARGETCOLUMNNAMES] VALUECONSTRAINT NUMBUF ACCESSTYPE");
 
         System.out.println("Please enter in the Name of the Column DB: ");
