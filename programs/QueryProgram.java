@@ -14,6 +14,11 @@ import java.io.*;
 import java.util.Objects;
 import java.util.Scanner;
 import TID.TID;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 
 import static global.GlobalConst.INVALID_PAGE;
 
@@ -66,7 +71,7 @@ public class QueryProgram {
         try {
 
             ColumnDB testDB = new ColumnDB();
-            testDB.openColumnDB(columnDBName);
+            testDB.openDB(columnDBName);
             // Perform the query based on the access type
             switch (accessType.toUpperCase()) {
                 case "FILESCAN":

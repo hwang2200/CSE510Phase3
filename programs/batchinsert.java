@@ -27,7 +27,7 @@ public class batchinsert
 
         if (datafileName != null || columnarfileName != null) {
             ColumnDB cDB = new ColumnDB();
-            cDB.openColumnDB(columnDBName);
+            cDB.openDB(columnDBName);
             
             BufferedReader br = new BufferedReader(new FileReader(datafileName));
             String[] columns = br.readLine().split(" ");
