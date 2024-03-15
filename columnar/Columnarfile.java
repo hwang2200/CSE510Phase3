@@ -44,7 +44,7 @@ public class Columnarfile {
     // columnar file
     void deleteColumnarFile() throws IOException, HFDiskMgrException, InvalidSlotNumberException, InvalidTupleSizeException, HFBufMgrException, FileAlreadyDeletedException {
         for (int i = 0; i < heapfiles.length; i++) {
-            heapfiles[i].deleteFile();
+            heapfiles[i].DSdeleteFile();
         }
 
         File metadataFile = new File(this.name + ".hdr");
@@ -226,9 +226,6 @@ public class Columnarfile {
             if (type[i].attrType == AttrType.attrInteger) {
                 tidTuple = heapfiles[i].getRecord(tid.recordIDs[i]);
                 deletedTid = tidTuple.returnTupleByteArray();
-                int dataInt = Convert.getIntValue(offset, deletedTid);
-                deletedTid = new byte[4];
-                Convert.setIntValue(dataInt, offset, deletedTid);
                 deletedTuple.tupleSet(deletedTid, offset, deletedTid.length);
                 offset = offset + 4;
 
@@ -239,8 +236,8 @@ public class Columnarfile {
                 deletedTid = tidTuple.returnTupleByteArray();
                 // String length?
                 String dataString = Convert.getStrValue(offset, deletedTid, deletedTid[i]);
-                deletedTid = new byte[dataString.length()];
-                Convert.setStrValue(dataString, offset, deletedTid);
+                //deletedTid = new byte[dataString.length()];
+                //Convert.setStrValue(dataString, offset, deletedTid);
                 deletedTuple.tupleSet(deletedTid, offset, deletedTid.length);
                 offset = offset + dataString.length();
 
