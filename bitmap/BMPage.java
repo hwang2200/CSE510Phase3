@@ -1,7 +1,6 @@
 package bitmap;
 
 import java.io.*;
-import java.lang.*;
 
 import global.*;
 import diskmgr.*;
@@ -12,7 +11,7 @@ interface ConstSlot{
   }
 
 public class BMPage extends Page
-    implements ConstSlot, GlobalConst{
+    implements ConstSlot {
   
   
         public static final int SIZE_OF_SLOT = 4;

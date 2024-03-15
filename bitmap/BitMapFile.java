@@ -7,6 +7,7 @@ import global.*;
 import columnar.*;
 import value.*;
 import diskmgr.*;
+import heap.*;
 
 public class BitMapFile
 		implements GlobalConst {
@@ -30,8 +31,9 @@ public class BitMapFile
 			throws GetFileEntryException,
 			ConstructPageException,
 			IOException,
-			AddFileEntryException {
-		// ints 0-9 or 20 distinct strings of max 25 chars
+			AddFileEntryException,
+			InvalidTupleSizeException {
+		
 		headerPageId = get_file_entry(filename);
 		if (headerPageId == null) {
 			headerPage = new BitMapHeaderPage();
@@ -44,21 +46,24 @@ public class BitMapFile
 
 		Page page = new Page();
 
+		// Sets the header key for the value type
 		if (value instanceof IntegerValueClass) {
 			headerPage.set_keyType((short) 0);
-
 		} else if (value instanceof StringValueClass) {
 			headerPage.set_keyType((short) 1);
 		}
 
-		// TODO: initalize the page with the columnarfile based on the columnno
+		// Initialize the first page
 		page.setpage(null);
-
 		BMPage bmPage = new BMPage(page);
 		bmPage.setNextPage(new PageId(INVALID_PAGE));
 		bmPage.setPrevPage(headerPageId);
 
 		headerPage.setNextPage(bmPage.getCurPage());
+
+		Scan scan = columnfile.openColumnScan(ColumnNo);
+		Tuple data = scan.getNext(scan.getUserRID());
+
 	}
 
 	public static void traceFilename(String filename)
@@ -124,7 +129,7 @@ public class BitMapFile
 
 		while (nextpageno.pid != INVALID_PAGE) {
 			deletepageno = page.getCurPage();
-			
+
 			page.setCurPage(nextpageno);
 			nextpageno = page.getNextPage();
 
@@ -135,8 +140,42 @@ public class BitMapFile
 
 	public boolean Delete(int position) {
 		try {
+			int key = (int) headerPage.get_keyType();
 
-			return true;
+			BMPage page = new BMPage();
+			PageId nextpageno = headerPage.getNextPage();
+
+			while (nextpageno.pid != INVALID_PAGE) {
+				page.setCurPage(nextpageno);
+				nextpageno = page.getNextPage();
+			}
+
+			byte[] data;
+
+			if (key == 0) {
+				data = new byte[2];
+				int byteIndex = position / 8;
+				int bitIndex = position % 8;
+				data[byteIndex] |= 0 << bitIndex;
+			} else {
+				data = new byte[4];
+				// TODO: Modify headerpage so it stores information about how to insert using
+				
+			}
+
+			if ((key == 0 && page.available_space() >= 2) || (key == 1 && page.available_space() >= 4)) {
+				// Page exists with space
+				page.writeBMPageArray(data);
+
+			} else {
+				// Need to add a new page
+				BMPage newpage = new BMPage();
+				page.setNextPage(newpage.getCurPage());
+				newpage.setPrevPage(page.getCurPage());
+				newpage.writeBMPageArray(data);
+			}
+
+			return true;		
 		} catch (Exception e) {
 			e.printStackTrace();
 			return false;
@@ -156,11 +195,18 @@ public class BitMapFile
 				nextpageno = page.getNextPage();
 			}
 
-			byte[] data = new byte[2];
+			byte[] data;
 
-			int byteIndex = position / 8;
-			int bitIndex = position % 8;
-			data[byteIndex] |= 1 << bitIndex;
+			if (key == 0) {
+				data = new byte[2];
+				int byteIndex = position / 8;
+				int bitIndex = position % 8;
+				data[byteIndex] |= 1 << bitIndex;
+			} else {
+				data = new byte[4];
+				// TODO: Modify headerpage so it stores information about how to insert using
+				
+			}
 
 			if ((key == 0 && page.available_space() >= 2) || (key == 1 && page.available_space() >= 4)) {
 				// Page exists with space
