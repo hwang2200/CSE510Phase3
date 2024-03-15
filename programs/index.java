@@ -33,7 +33,7 @@ public class index {
 
         try {
             ColumnDB testDB = new ColumnDB();   // open columnDB and type of index
-            testDB.openColumnDB(columnDBName);
+            testDB.openDB(columnDBName);
 
             if(indexType.equals("BTREE")){
                 createBTree(columnarfileName, columnName);

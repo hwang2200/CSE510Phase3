@@ -5,7 +5,6 @@ import bitmap.BitMapFile;
 import btree.*;
 import columnar.Columnarfile;
 import global.*;
-import bufmgr.*;
 import diskmgr.*;
 import heap.*;
 import iterator.*;
@@ -16,9 +15,7 @@ import java.util.Scanner;
 import TID.TID;
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
+
 
 import static global.GlobalConst.INVALID_PAGE;
 
