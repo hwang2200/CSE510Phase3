@@ -211,7 +211,7 @@ public class Columnarfile {
     public boolean createBitMapIndex(int columnNo, ValueClass value) {
         try {
             new BitMapFile(this.name, this, columnNo, value);
-
+            
             return true;
         } catch (Exception e) {
             e.printStackTrace();
