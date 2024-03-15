@@ -1,3 +1,4 @@
+package programs;
 import bitmap.BMPage;
 import bitmap.BitMapFile;
 import btree.*;
@@ -68,7 +69,7 @@ public class DeleteQueryProgram {
         try {
 
             ColumnDB testDB = new ColumnDB();
-            testDB.openColumnDB(columnDBName);
+            testDB.openDB(columnDBName);
 
             boolean del;
 
@@ -198,17 +199,35 @@ public class DeleteQueryProgram {
                     projList,
                     valueConstraintExpr);
 
+
+            String[] columnNames = new String[targetColumnNames.length];
+            AttrType[] columnTypes = new AttrType[targetColumnNames.length];
+
+            for (int i = 0; i < targetColumnNames.length; i++) {
+                String[] columnDetails = targetColumnNames[i].split(":");
+                columnNames[i] = columnDetails[0];
+
+                if (columnDetails[1].equals("int")) {
+                    columnTypes[i] = new AttrType(AttrType.attrInteger);
+                } else {
+                    columnTypes[i] = new AttrType(AttrType.attrString);
+                }
+            }
+            Columnarfile columnarFile = new Columnarfile(columnarFileName, targetColumnNames.length, columnTypes);
+
+            TID tid = new TID(targetColumnNames.length);
+
             // Get tuples one by one
             Tuple tuple;
             while ((tuple = fileScan.get_next()) != null) {
-                // Process the tuple here
-                System.out.println(tuple);
-                columnarFile.deleteTuple(rid);
-                markTupleDeleted();
+                // Delete the tuple here
+                columnarFile.markTupleDeleted(tid);
             }
 
-            if (del)
-                columnarFileName purgeAllDeletedTuples();
+            // Purge the tuples here
+            if (delete)
+                columnarFile.purgeAllDeletedTuples();
+
 
             // Close the file scan
             br.close();
@@ -220,7 +239,7 @@ public class DeleteQueryProgram {
 
     private static void performColumnScan(String columnarFileName, String[] targetColumnNames, String valueConstraint, boolean delete)
             throws IndexException, InvalidTupleSizeException, IOException, UnknownIndexTypeException,
-            InvalidTypeException, UnknownKeyTypeException {
+            InvalidTypeException, UnknownKeyTypeException, HFException, HFBufMgrException, HFDiskMgrException, InvalidSlotNumberException, FileAlreadyDeletedException, Exception {
         // Initialize FldSpec[] for the output fields
         FldSpec[] outFlds = new FldSpec[targetColumnNames.length];
         for (int i = 0; i < targetColumnNames.length; i++) {
@@ -328,11 +347,31 @@ public class DeleteQueryProgram {
                     false // Assuming not index only for now
             );
 
+            String[] columnNamess = new String[targetColumnNames.length];
+            AttrType[] columnTypess = new AttrType[targetColumnNames.length];
+
+            TID tid = new TID(targetColumnNames.length);
+
+            for (int i = 0; i < targetColumnNames.length; i++) {
+                String[] columnDetails = targetColumnNames[i].split(":");
+                columnNamess[i] = columnDetails[0];
+
+                if (columnDetails[1].equals("int")) {
+                    columnTypess[i] = new AttrType(AttrType.attrInteger);
+                } else {
+                    columnTypess[i] = new AttrType(AttrType.attrString);
+                }
+            }
+            Columnarfile columnarFile = new Columnarfile(columnarFileName, targetColumnNames.length, columnTypess);
+
             // Perform column scan
             Tuple tuple;
             while ((tuple = columnarIndexScan.get_next()) != null) {
-                System.out.println(tuple);
+                columnarFile.markTupleDeleted(tid);
             }
+
+            if (delete)
+                columnarFile.purgeAllDeletedTuples();
 
             columnarIndexScan.close();
             br.close();
@@ -352,6 +391,24 @@ public class DeleteQueryProgram {
 
                 System.out.println("Key: " + key.getKey() + ", RID: " + rid.toString());
             }
+
+            String[] columnNames = new String[targetColumnNames.length];
+            AttrType[] columnTypes = new AttrType[targetColumnNames.length];
+
+            for (int i = 0; i < targetColumnNames.length; i++) {
+                String[] columnDetails = targetColumnNames[i].split(":");
+                columnNames[i] = columnDetails[0];
+
+                if (columnDetails[1].equals("int")) {
+                    columnTypes[i] = new AttrType(AttrType.attrInteger);
+                } else {
+                    columnTypes[i] = new AttrType(AttrType.attrString);
+                }
+            }
+            Columnarfile columnarFile = new Columnarfile(columnarFileName, targetColumnNames.length, columnTypes);
+
+            if (delete)
+                columnarFile.purgeAllDeletedTuples();
 
             // Close the B-tree scan
             btreeScan.DestroyBTreeFileScan();
@@ -401,12 +458,15 @@ public class DeleteQueryProgram {
                         }
                         // Retrieve the tuple using the TID
                         Tuple tuple = columnarFile.getTuple(tid);
-                        System.out.println(tuple);
+                        columnarFile.markTupleDeleted(tid);
                     }
                 }
 
                 nextPageId = page.getNextPage();
             }
+
+            if (delete)
+                columnarFile.purgeAllDeletedTuples();
 
             bitmapFile.close(); // Close the bitmap file after scanning
         } catch (Exception e) {
