@@ -165,7 +165,7 @@ public class BT implements GlobalConst{
 	else throw new NodeNotMatchException(null, "node types do not match"); 
 	
 	if ( keyType== AttrType.attrInteger) {
-	  key= new IntegerKey( new Integer 
+	  key= new IntegerKey( new Integer
 			       (Convert.getIntValue(offset, from)));
 	}
 	else if (keyType== AttrType.attrString) {

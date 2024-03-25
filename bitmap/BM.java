@@ -7,7 +7,7 @@ import bufmgr.*;
 
 public class BM implements GlobalConst {
 
-	public static void printBitMap(bitmap.BitMapHeaderPage header)
+	public static void printBitMap(BitMapHeaderPage header)
 			throws IOException,
 			ConstructPageException,
 			IteratorException,
@@ -23,9 +23,7 @@ public class BM implements GlobalConst {
 		BMPage page = new BMPage();
 		PageId nextpageno = header.getNextPage();
 
-		System.out.println("");
-		System.out.println("");
-		System.out.println("");
+		System.out.println();
 		System.out.println("---------------The Bitmap---------------");
 		
 		while (nextpageno.pid != INVALID_PAGE) {
@@ -36,4 +34,5 @@ public class BM implements GlobalConst {
 
 		System.out.println("------------------ End -----------------");
 	}
+
 }

@@ -1,10 +1,10 @@
 package programs;
 
 import columnar.Columnarfile;
-import diskmgr.ColumnDB;
-import diskmgr.PCounter;
+import diskmgr.*;
 import global.AttrType;
 import global.Convert;
+import global.SystemDefs;
 import heap.HFBufMgrException;
 import heap.HFDiskMgrException;
 import heap.HFException;
@@ -52,15 +52,14 @@ public class batchinsert
             String columnarfileName = args[2];
             int numColumns = Integer.parseInt(args[3]);
 
-            if (datafileName != null || columnarfileName != null) {
-                ColumnDB cDB = new ColumnDB();
-                cDB.openDB(columnDBName);
+            ColumnDB cDB = new ColumnDB();
+            cDB.openDB(columnDBName);
                 
-                BufferedReader br = new BufferedReader(new FileReader(datafileName));
-                String[] columns = br.readLine().split(" ");
+            BufferedReader br = new BufferedReader(new FileReader(datafileName));
+            String[] columns = br.readLine().split(" ");
 
-                String[] columnNames = new String[numColumns];
-                AttrType[] columnTypes = new AttrType[numColumns];
+            String[] columnNames = new String[numColumns];
+            AttrType[] columnTypes = new AttrType[numColumns];
             
 
             for (int i = 0; i < columns.length; i++) {
@@ -98,11 +97,8 @@ public class batchinsert
             // Print out the number of disk pages read and written
             System.out.println("Number of disk pages read: " + PCounter.getReadCount());
             System.out.println("Number of disk pages written: " + PCounter.getWriteCount());
-            }
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-            // TODO: handle exception
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
         }
 
     }
