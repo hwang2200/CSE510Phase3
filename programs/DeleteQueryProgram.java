@@ -67,7 +67,7 @@ public class DeleteQueryProgram {
         String delete = args[5];
 
         try {
-
+            SystemDefs.init(columnDBName, "test", 0, 0, 0, "Clock");
             ColumnDB testDB = new ColumnDB();
             testDB.openDB(columnDBName);
 

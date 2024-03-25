@@ -66,7 +66,7 @@ public class QueryProgram {
         String accessType = args[4];
 
         try {
-
+            SystemDefs.init(columnDBName, "test", 0, 0, 0, "Clock");
             ColumnDB testDB = new ColumnDB();
             testDB.openDB(columnDBName);
             // Perform the query based on the access type

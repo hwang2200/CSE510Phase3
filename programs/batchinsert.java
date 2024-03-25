@@ -52,7 +52,7 @@ public class batchinsert
             String columnarfileName = args[2];
             int numColumns = Integer.parseInt(args[3]);
 
-            //Initialize by making init() static in SystemDefs.java
+            //Initialize by making init() static in SystemDefs.java (but what are the proper parameters for batch insert?)
             SystemDefs.init(columnDBName, "test", 0, 0, 0, "Clock");
             ColumnDB cDB = new ColumnDB();
             cDB.openDB(columnDBName);

@@ -57,6 +57,7 @@ public class index {
         String indexType = (args[3]).toUpperCase();
 
         try {
+            SystemDefs.init(columnDBName, "test", 0, 0, 0, "Clock");
             ColumnDB testDB = new ColumnDB();   // open columnDB and type of index
             testDB.openDB(columnDBName);
 
