@@ -52,8 +52,11 @@ public class batchinsert
             String columnarfileName = args[2];
             int numColumns = Integer.parseInt(args[3]);
 
+            //Initialize by making init() static in SystemDefs.java
+            SystemDefs.init(columnDBName, "test", 0, 0, 0, "Clock");
             ColumnDB cDB = new ColumnDB();
             cDB.openDB(columnDBName);
+
                 
             BufferedReader br = new BufferedReader(new FileReader(datafileName));
             String[] columns = br.readLine().split(" ");

@@ -7,5 +7,4 @@ import bufmgr.*;
 import global.*;
 
 public class ColumnDB extends DB {
-
 }
