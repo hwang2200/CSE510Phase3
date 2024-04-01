@@ -24,7 +24,7 @@ public class index {
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("Welcome to programs.index!");
-        System.out.println("Please enter in a query in the format: COLUMNDBNAME COLUMNARFILENAME COLUMNAME INDEXTYPE");
+        //System.out.println("Please enter in a query in the format: COLUMNDBNAME COLUMNARFILENAME COLUMNAME INDEXTYPE");
 
         System.out.println("Please enter in the Name of the Column DB: ");
         String colDBName = scanner.nextLine();
@@ -35,8 +35,9 @@ public class index {
         System.out.println("Please enter in the Target Column Name: ");
         String columnName = scanner.nextLine();
 
-        System.out.println("Please enter in the Index Type (\"BTREE\", or \"BITMAP\": ");
+        System.out.println("Please enter in the Index Type (\"BTREE\", or \"BITMAP\"): ");
         String indexType = scanner.nextLine();
+
 
         String[] queryArgs = {colDBName, colFileName, columnName, indexType};
         indexStart(queryArgs);
@@ -57,7 +58,7 @@ public class index {
         String indexType = (args[3]).toUpperCase();
 
         try {
-            SystemDefs.init(columnDBName, "test", 0, 0, 0, "Clock");
+            SystemDefs sysDefs = new SystemDefs(columnDBName, 100000, 100, "Clock");
             ColumnDB testDB = new ColumnDB();   // open columnDB and type of index
             testDB.openDB(columnDBName);
 
@@ -86,6 +87,7 @@ public class index {
 
     public static void createBTree(String columnarfileName, String columnName){
         try {
+
             BufferedReader br = new BufferedReader(new FileReader(columnarfileName));
             String[] columns = br.readLine().split(" ");    // read in column 
             int columnNum = 0;

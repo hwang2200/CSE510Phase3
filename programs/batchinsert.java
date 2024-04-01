@@ -22,13 +22,13 @@ public class batchinsert
 
 
         System.out.println("Welcome to batchinsert.index!");
-        System.out.println("Please enter in a query in the format: DATAFILENAME COLUMNDBNAME COLUMNARFILENAME NUMCOLUMNS");
+        //System.out.println("Please enter in a query in the format: DATAFILENAME COLUMNDBNAME COLUMNARFILENAME NUMCOLUMNS");
 
         System.out.println("Please enter in the Name of the Data File: ");
         String dataFileName = scanner.nextLine();
 
         //System.out.println("Please enter in the Name of the Column DB: ");
-        String colDBName = dataFileName + "DB";// scanner.nextLine();
+        String colDBName = "DB" + dataFileName;// scanner.nextLine();
 
         String[] queryArgs = {dataFileName, colDBName};
         batchInsert(queryArgs);
@@ -47,9 +47,8 @@ public class batchinsert
             }
             String datafileName = args[0];
             String columnDBName = args[1];
-            String columnarfileName = datafileName+"Columnar";
+            String columnarfileName = "Columnar" + datafileName;
 
-            //Initialize by making init() static in SystemDefs.java (but what are the proper parameters for batch insert?)
             SystemDefs sysDefs = new SystemDefs(columnDBName, 100000, 100, "Clock");
                 
             BufferedReader br = new BufferedReader(new FileReader(datafileName));
