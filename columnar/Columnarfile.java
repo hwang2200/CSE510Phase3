@@ -2,6 +2,7 @@ package columnar;
 
 import global.AttrType;
 import global.Convert;
+import global.RID;
 import heap.*;
 import TID.*;
 import bitmap.BitMapFile;
@@ -12,12 +13,20 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.util.Arrays;
 
 public class Columnarfile {
-    private String name;
+    public String name;
     public static int numColumns;
     public AttrType[] type;
     public Heapfile[] heapfiles;
+    public Heapfile columnarFile;
+
+    public int tupleLength;
+
+    public String[] columnNames;
+
+    public ColumnarFileMetadata columnarFileMetadata;
 
     public Columnarfile(String name, int numColumns, AttrType[] type)
             throws IOException, HFDiskMgrException, HFException, HFBufMgrException {
@@ -32,11 +41,9 @@ public class Columnarfile {
         }
 
         // Initialize the metadata file
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(this.name + ".hdr"))) {
-            oos.writeObject(this.type); // Write the type array to the metadata file
-        } catch (IOException e) {
-            throw new IOException("Unable to create or write to the metadata file.", e);
-        }
+        columnarFileMetadata = new ColumnarFileMetadata(this);
+        columnarFile = new Heapfile(this.name + ".hdr");
+        columnarFileMetadata.columnarFileName = name;
 
     }
 
@@ -58,28 +65,34 @@ public class Columnarfile {
         // Number of records in a tuple = number of columns
         TID tid = new TID(numColumns);
         tid.numRIDs = numColumns;
+        tid.recordIDs = new RID[numColumns];
         int offset = 0;
 
+        int count = 0;
         // For each type
         for (int i = 0; i < type.length; i++) {
             // Check attribute type and convert data accordingly
             if (type[i].attrType == AttrType.attrInteger) {
                 int dataInt = Convert.getIntValue(offset, tuplePtr);
                 byte[] newData = new byte[4];
-                Convert.setIntValue(dataInt, offset, newData);
+                Convert.setIntValue(dataInt, 0, newData);
                 offset = offset + 4;
 
+                tid.recordIDs[i] = new RID();
                 tid.recordIDs[i] = heapfiles[i].insertRecord(newData);
             }
             if (type[i].attrType == AttrType.attrString) {
-                String dataStr = Convert.getStrValue(offset, tuplePtr, tuplePtr[i]);
-                byte[] newData = new byte[3];
-                Convert.setStrValue(dataStr, offset, newData);
-                offset = offset + 3;
+                String dataStr = Convert.getStrValue(offset, tuplePtr, 25);
+                byte[] newData = new byte[25];
+                Convert.setStrValue(dataStr, 0, newData);
+                offset = offset + 25;
 
+                tid.recordIDs[i] = new RID();
                 tid.recordIDs[i] = heapfiles[i].insertRecord(newData);
             }
+            count++;
         }
+        tid.numRIDs = count;
         return tid;
     }
 
@@ -255,4 +268,6 @@ public class Columnarfile {
         deletedTuples.deleteFile();
         return true;
     }
+
+
 }
