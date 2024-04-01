@@ -21,7 +21,7 @@ public class batchinsert
         Scanner scanner = new Scanner(System.in);
 
 
-        System.out.println("Welcome to batchinsert.index!");
+        System.out.println("Welcome to batchinsert!");
         //System.out.println("Please enter in a query in the format: DATAFILENAME COLUMNDBNAME COLUMNARFILENAME NUMCOLUMNS");
 
         System.out.println("Please enter in the Name of the Data File: ");
@@ -36,8 +36,9 @@ public class batchinsert
         scanner.close();
     }
 
-    public static void batchInsert(String[] args){
+    public static Columnarfile batchInsert(String[] args){
         PCounter.initialize();
+        Columnarfile cf = null;
 
         try {
 
@@ -74,7 +75,7 @@ public class batchinsert
                 }
             }
 
-            Columnarfile cf = new Columnarfile(columnarfileName, columnNames.length, columnTypes);
+            cf = new Columnarfile(columnarfileName, columnNames.length, columnTypes);
 
 
             //Read data from data file
@@ -106,6 +107,8 @@ public class batchinsert
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
+
+        return cf;
 
     }
 }

@@ -24,7 +24,7 @@ public class index {
         PCounter.initialize();
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("Welcome to programs.index!");
+        System.out.println("Welcome to index!");
         //System.out.println("Please enter in a query in the format: COLUMNDBNAME COLUMNARFILENAME COLUMNAME INDEXTYPE");
 
         System.out.println("Please enter in the Name of the Column DB: ");
@@ -81,7 +81,6 @@ public class index {
 
         } catch (Exception e) {
             e.printStackTrace();
-            // TODO: handle exception
         }
     }
 
@@ -109,7 +108,6 @@ public class index {
 
         } catch (Exception e) {
             e.printStackTrace();
-            // TODO: handle exception
         }
     }
 
@@ -148,7 +146,6 @@ public class index {
             br.close();
         } catch (Exception e) {
             e.printStackTrace();
-            // TODO: handle exception
         }
     }
 }
