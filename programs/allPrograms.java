@@ -20,76 +20,80 @@ public class allPrograms {
     {
         Columnarfile columnarFile = null;
         Scanner scanner = new Scanner(System.in);
-
-        System.out.println("1. Batch Insert Program");
-        System.out.println("2. Index Program");
-        System.out.println("3. Query Program");
-        System.out.println("4. Delete Query Program");
-        System.out.println("5. Quit Program");
-        System.out.println();
-        System.out.print("Enter Option from above: ");
-        int option = scanner.nextInt();
+        String option = null;
 
         do {
-            if (option == 1) {
-                Scanner scan1 = new Scanner(System.in);
-                System.out.println("Welcome to batchinsert.index!");
-                //System.out.println("Please enter in a query in the format: DATAFILENAME COLUMNDBNAME COLUMNARFILENAME NUMCOLUMNS");
 
-                System.out.println("Please enter in the name of the Data File: ");
-                String dataFileName = scan1.nextLine();
+            System.out.println("1. Batch Insert Program");
+            System.out.println("2. Index Program");
+            System.out.println("3. Query Program");
+            System.out.println("4. Delete Query Program");
+            System.out.println("5. Quit Program");
+            System.out.println();
+            System.out.print("Enter Option from above: ");
+            option = scanner.nextLine();
 
-                System.out.println("Please enter in the name of the Column DB: ");
-                String colDBName = scan1.nextLine();
+            switch(option)
+            {
+                case "1":
+                    //Scanner scan1 = new Scanner(System.in);
+                    System.out.println("Welcome to batchinsert!");
+                    //System.out.println("Please enter in a query in the format: DATAFILENAME COLUMNDBNAME COLUMNARFILENAME NUMCOLUMNS");
 
-                System.out.println("Please enter in the name of the Columnar File: ");
-                String columnarFileName = scan1.nextLine();
+                    System.out.println("Please enter in the name of the Data File: ");
+                    String dataFileName = scanner.nextLine();
 
-                System.out.println("Please enter in the number of columns: ");
-                String numColumns = scan1.nextLine();
+                    System.out.println("Please enter in the name of the Column DB: ");
+                    String colDBName = scanner.nextLine();
 
-                String[] queryArgs = {dataFileName, colDBName, columnarFileName, numColumns};
+                    System.out.println("Please enter in the name of the Columnar File: ");
+                    String columnarFileName = scanner.nextLine();
 
-                columnarFile = batchInsert(queryArgs);
-                //System.out.println(columnarFile);
+                    System.out.println("Please enter in the number of columns: ");
+                    String numColumns = scanner.nextLine();
 
-                scan1.close();
-                break;
-            } else if (option == 2) {
-                Scanner scan2 = new Scanner(System.in);
+                    String[] queryArgs = {dataFileName, colDBName, columnarFileName, numColumns};
 
-                //column DB name = specified above
-                //columnarfile name = returned by batchinsert
+                    columnarFile = batchInsert(queryArgs);
+                    //System.out.println(columnarFile);
 
-                System.out.println("Welcome to index!");
-                //System.out.println("Please enter in a query in the format: COLUMNDBNAME COLUMNARFILENAME COLUMNAME INDEXTYPE");
+                    //scan1.close();
+                    break;
+                case "2":
+                    //Scanner scan2 = new Scanner(System.in);
 
-                System.out.println("Please enter in the name of the Column DB: ");
-                String colDBName = scan2.nextLine();
+                    //column DB name = specified above
+                    //columnarfile name = returned by batchinsert
 
-                //System.out.println("Please enter in the name of the Columnar File: ");
-                //String columnarFileName = scan2.nextLine();
+                    System.out.println("Welcome to index!");
+                    //System.out.println("Please enter in a query in the format: COLUMNDBNAME COLUMNARFILENAME COLUMNAME INDEXTYPE");
 
-                System.out.println("Please enter in the Target Column Name: ");
-                String columnName = scan2.nextLine();
+                    System.out.println("Please enter in the name of the Column DB: ");
+                    colDBName = scanner.nextLine();
 
-                System.out.println("Please enter in the Index Type (\"BTREE\", or \"BITMAP\"): ");
-                String indexType = scan2.nextLine();
+                    System.out.println("Please enter in the name of the Columnar File: ");
+                    columnarFileName = scanner.nextLine();
 
-                String[] queryArgs = {colDBName, columnarFile, columnName, indexType};
-                index(queryArgs);
+                    System.out.println("Please enter in the Target Column Name: ");
+                    String columnName = scanner.nextLine();
 
-                scan2.close();
-                break;
-            } else if (option == 3) {
+                    System.out.println("Please enter in the Index Type (\"BTREE\", or \"BITMAP\"): ");
+                    String indexType = scanner.nextLine();
 
-            } else if (option == 4) {
+                    queryArgs = new String[]{colDBName, columnarFileName, columnName, indexType};
+                    index(queryArgs);
 
-            } else if (option == 5) {
-                System.out.println("Quitting...");
-                break;
+                    //scan2.close();
+                    break;
+                case "3":
+
+                case "4":
+
+                case "5":
+                    System.out.println("Quitting...");
+                    break;
             }
-        } while (option != 5);
+        } while (!option.equals("5"));
 
 
         scanner.close();
@@ -134,7 +138,7 @@ public class allPrograms {
             }
 
             cf = new Columnarfile(columnarfileName, columnNames.length, columnTypes);
-            
+
             //Read data from data file
             byte[] dataFileArray = new byte[25+25+4+4];
             int offset = 0;
@@ -209,19 +213,19 @@ public class allPrograms {
     public static void createBTree(String columnarfileName, String columnName){
         try {
             BufferedReader br = new BufferedReader(new FileReader(columnarfileName));
-            String[] columns = br.readLine().split(" ");    // read in column
-            System.out.println(Arrays.toString(columns));
+            String columns = br.readLine();   // read in column
+            System.out.println(columns);
 
             int columnNum = 0;
 
-            for (int i = 0; i < columns.length; i++) {      // find column number from name
+            /*for (int i = 0; i < columns.length; i++) {      // find column number from name
                 String[] columnNames = columns[i].split(":");
                 System.out.println(Arrays.toString(columnNames));
 
                 if (columnNames[0].equals(columnName)) {
                     columnNum = i;
                 }
-            }
+            }*/
 
             Columnarfile cf = new Columnarfile(columnarfileName, columnNum, null);    // create cf with name and number
             cf.createBTreeIndex(columnNum); // creates BTreeIndex
