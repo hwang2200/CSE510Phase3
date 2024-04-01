@@ -19,7 +19,6 @@ public class allPrograms {
     public static void main(String[] args)
     {
         Columnarfile columnarFile = null;
-        String colDBName = null;
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("1. Batch Insert Program");
@@ -37,15 +36,19 @@ public class allPrograms {
                 System.out.println("Welcome to batchinsert.index!");
                 //System.out.println("Please enter in a query in the format: DATAFILENAME COLUMNDBNAME COLUMNARFILENAME NUMCOLUMNS");
 
-                System.out.println("Please enter in the Name of the Data File: ");
+                System.out.println("Please enter in the name of the Data File: ");
                 String dataFileName = scan1.nextLine();
 
-                colDBName = "DB" + dataFileName;// scanner.nextLine();
+                System.out.println("Please enter in the name of the Column DB: ");
+                String colDBName = scan1.nextLine();
 
-                System.out.println("Please enter in the Name of the Columnar File: ");
+                System.out.println("Please enter in the name of the Columnar File: ");
                 String columnarFileName = scan1.nextLine();
 
-                String[] queryArgs = {dataFileName, colDBName, columnarFileName};
+                System.out.println("Please enter in the number of columns: ");
+                String numColumns = scan1.nextLine();
+
+                String[] queryArgs = {dataFileName, colDBName, columnarFileName, numColumns};
 
                 columnarFile = batchInsert(queryArgs);
                 //System.out.println(columnarFile);
@@ -61,16 +64,23 @@ public class allPrograms {
                 System.out.println("Welcome to index!");
                 //System.out.println("Please enter in a query in the format: COLUMNDBNAME COLUMNARFILENAME COLUMNAME INDEXTYPE");
 
+                System.out.println("Please enter in the name of the Column DB: ");
+                String colDBName = scan2.nextLine();
+
+                //System.out.println("Please enter in the name of the Columnar File: ");
+                //String columnarFileName = scan2.nextLine();
+
                 System.out.println("Please enter in the Target Column Name: ");
                 String columnName = scan2.nextLine();
 
                 System.out.println("Please enter in the Index Type (\"BTREE\", or \"BITMAP\"): ");
                 String indexType = scan2.nextLine();
 
-                String[] queryArgs = {colDBName, columnName, indexType};
+                String[] queryArgs = {colDBName, columnarFile, columnName, indexType};
                 index(queryArgs);
 
-
+                scan2.close();
+                break;
             } else if (option == 3) {
 
             } else if (option == 4) {
@@ -91,13 +101,14 @@ public class allPrograms {
 
         try {
 
-            if (args.length != 2) {
+            if (args.length != 4) {
                 System.out.println("Usage: java BatchInsert DATAFILENAME COLUMNDBNAME COLUMNARFILENAME NUMCOLUMNS");
                 System.exit(1);
             }
             String datafileName = args[0];
             String columnDBName = args[1];
-            String columnarfileName = "Columnar" + datafileName;
+            String columnarfileName = args[2];
+            int numColumns = Integer.parseInt(args[3]);
 
             SystemDefs sysDefs = new SystemDefs(columnDBName, 100000, 100, "Clock");
 
@@ -123,8 +134,7 @@ public class allPrograms {
             }
 
             cf = new Columnarfile(columnarfileName, columnNames.length, columnTypes);
-
-
+            
             //Read data from data file
             byte[] dataFileArray = new byte[25+25+4+4];
             int offset = 0;
@@ -160,7 +170,7 @@ public class allPrograms {
     public static void index(String[] args){
         PCounter.initialize();
         Scanner scanner = new Scanner(System.in);
-        if (args.length != 5) { // checks length
+        if (args.length != 4) { // checks length
             System.out.println("Usage: java Index COLUMNDBNAME COLUMNARFILENAME COLUMNAME INDEXTYPE");
             System.exit(1);
         }
