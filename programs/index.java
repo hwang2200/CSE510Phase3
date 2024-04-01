@@ -12,6 +12,7 @@ import value.ValueClass;
 import index.*;
 import columnar.*;
 import java.io.*;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Scanner;
 
@@ -87,13 +88,15 @@ public class index {
 
     public static void createBTree(String columnarfileName, String columnName){
         try {
-
             BufferedReader br = new BufferedReader(new FileReader(columnarfileName));
-            String[] columns = br.readLine().split(" ");    // read in column 
+            String[] columns = br.readLine().split(" ");    // read in column
+            System.out.println(Arrays.toString(columns));
+
             int columnNum = 0;
 
             for (int i = 0; i < columns.length; i++) {      // find column number from name
                 String[] columnNames = columns[i].split(":");
+                System.out.println(Arrays.toString(columnNames));
 
                 if (columnNames[0].equals(columnName)) {
                     columnNum = i;

@@ -54,10 +54,8 @@ public class Columnarfile {
             heapfiles[i].deleteFile();
         }
 
-        File metadataFile = new File(this.name + ".hdr");
-        if (metadataFile.exists() && !metadataFile.delete()) {
-            throw new IOException("Failed to delete metadata file: " + metadataFile.getName());
-        }
+        //Delete metadata file associated with columnar file
+
     }
 
     // Inserts a new tuple into the columnar file

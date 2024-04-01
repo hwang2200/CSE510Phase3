@@ -81,7 +81,6 @@ public class batchinsert
             byte[] dataFileArray = new byte[25+25+4+4];
             int offset = 0;
 
-            int limit = 0;
             String currLine = br.readLine();
             while (currLine != null) {
                 String[] splitLine = currLine.split("\\s+");
