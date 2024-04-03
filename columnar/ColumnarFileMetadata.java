@@ -15,7 +15,11 @@ public class ColumnarFileMetadata {
     public String[] heapFileNames;
     public String[] columnNames;
     public byte[] data;
-    public static int size;
+
+    public ColumnarFileMetadata()
+    {
+
+    }
 
     public ColumnarFileMetadata(Columnarfile columnarFile) {
 
@@ -26,8 +30,7 @@ public class ColumnarFileMetadata {
         this.attributeType = new int[numberOfColumns];
         //this.heapFileNames = columnarFile.heapFileNames;
         this.columnNames = columnarFile.columnNames;
-        size = stringSize * 2 * numberOfColumns + 4 * 2 + 4 * numberOfColumns + stringSize + 4;
-        this.data = new byte[size];
+        this.data = new byte[stringSize];
     }
 
     public void getColumnarFileMetadata (Tuple tuple) {
@@ -77,7 +80,7 @@ public class ColumnarFileMetadata {
             e.printStackTrace();
         }
 
-        Tuple atuple = new Tuple(data, 0, size);
+        Tuple atuple = new Tuple(data, 0, stringSize);
         //return atuple;
     }
 }

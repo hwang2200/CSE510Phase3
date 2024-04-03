@@ -1,5 +1,6 @@
 package programs;
 
+import columnar.ColumnarFileMetadata;
 import columnar.Columnarfile;
 import diskmgr.ColumnDB;
 import diskmgr.PCounter;
@@ -80,7 +81,7 @@ public class allPrograms {
                     System.out.println("Please enter in the Index Type (\"BTREE\", or \"BITMAP\"): ");
                     String indexType = scanner.nextLine();
 
-                    queryArgs = new String[]{colDBName, columnarFileName, columnName, indexType};
+                    queryArgs = new String[]{colDBName, columnarFileName, columnName, indexType, columnarFile};
                     index(queryArgs);
 
                     //scan2.close();
@@ -171,7 +172,7 @@ public class allPrograms {
         return cf;
     }
 
-    public static void index(String[] args){
+    public static void index(String[] args, Columnarfile cf){
         PCounter.initialize();
         Scanner scanner = new Scanner(System.in);
         if (args.length != 4) { // checks length
@@ -190,10 +191,10 @@ public class allPrograms {
             testDB.openDB(columnDBName);
 
             if(indexType.equals("BTREE")){
-                createBTree(columnarfileName, columnName);
+                createBTree(cf, columnarfileName, columnName);
             }
             else if(indexType.equals("BITMAP")){
-                createBitMap(columnarfileName, columnName);
+                createBitMap(cf, columnarfileName, columnName);
             }
             else{
                 System.out.println("Usage: INDEXTYPE = BTREE or BITMAP");
@@ -210,24 +211,29 @@ public class allPrograms {
         }
     }
 
-    public static void createBTree(String columnarfileName, String columnName){
+    public static void createBTree(Columnarfile cf, String columnarfileName, String columnName){
         try {
+            //We could either do it this way or find a way to create a columnarfile and store it locally (which might be harder)
+            ColumnarFileMetadata columnarMetadata = cf.getColumnarFileMetadata(columnarfileName);
+            cf.columnNames = columnarMetadata.columnNames;
+
+            //Maybe not needed
             BufferedReader br = new BufferedReader(new FileReader(columnarfileName));
-            String columns = br.readLine();   // read in column
+            String[] columns = br.readLine().split(" ");   // read in column
             System.out.println(columns);
 
             int columnNum = 0;
 
-            /*for (int i = 0; i < columns.length; i++) {      // find column number from name
+            for (int i = 0; i < columns.length; i++) {      // find column number from name
                 String[] columnNames = columns[i].split(":");
                 System.out.println(Arrays.toString(columnNames));
 
                 if (columnNames[0].equals(columnName)) {
                     columnNum = i;
                 }
-            }*/
+            }
 
-            Columnarfile cf = new Columnarfile(columnarfileName, columnNum, null);    // create cf with name and number
+            cf = new Columnarfile(columnarfileName, columnNum, null);    // create cf with name and number
             cf.createBTreeIndex(columnNum); // creates BTreeIndex
             br.close(); // closes br
 
@@ -236,31 +242,41 @@ public class allPrograms {
         }
     }
 
-    public static void createBitMap(String columnarfileName, String columnName){
+    public static void createBitMap(Columnarfile cf, String columnarfileName, String columnName){
         try {
+            ColumnarFileMetadata columnarMetadata = cf.getColumnarFileMetadata(columnarfileName);
+            cf.columnNames = columnarMetadata.columnNames;
+
+            //Maybe not needed
             BufferedReader br = new BufferedReader(new FileReader(columnarfileName));
             String[] columns = br.readLine().split(" ");    // read in columns
+
             int columnNum = 0;
             boolean intOrString = false;
             ValueClass valueI = new IntegerValueClass();
             ValueClass valueS = new StringValueClass();
 
 
-            for (int i = 0; i < columns.length; i++) {
+            for (int i = 0; i < columns.length; i++)
+            {
                 String[] columnNames = columns[i].split(":");   // find column name
 
-                if (columnNames[0].equals(columnName)) {
+                if (columnNames[0].equals(columnName))
+                {
                     columnNum = i;
-                    if (columnNames[1].equals("int")){  // need type either int or string
+                    if (columnNames[1].equals("int"))
+                    {  // need type either int or string
                         intOrString = false;
                     }
-                    else{
+                    else
+                    {
                         intOrString = true;
                     }
+
                 }
             }
 
-            Columnarfile cf = new Columnarfile(columnarfileName, columnNum, null);
+            cf = new Columnarfile(columnarfileName, columnNum, null);
             if(intOrString){
                 cf.createBitMapIndex(columnNum, valueI);    // bitmap index with int
             }

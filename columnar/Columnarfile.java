@@ -267,5 +267,25 @@ public class Columnarfile {
         return true;
     }
 
+    public ColumnarFileMetadata getColumnarFileMetadata(String columnarFileName)
+    {
+        ColumnarFileMetadata result = new ColumnarFileMetadata();
+        if(name == null)
+        {
+            return null;
+        }
+        else {
+            try {
+                Heapfile hf = new Heapfile(columnarFileName);
+                RID rid = new RID();
+                Tuple tuple = new Tuple();
+                Scan s = hf.openScan();
+                tuple = s.getNext(rid);
+                result.getColumnarFileMetadata(tuple);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
 
 }
