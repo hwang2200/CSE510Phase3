@@ -267,6 +267,16 @@ public class Columnarfile {
         return true;
     }
 
+    public void setColumnarFileMetadata() throws SpaceNotAvailableException, HFDiskMgrException, HFException, InvalidSlotNumberException, InvalidTupleSizeException, HFBufMgrException, IOException {
+        for(int i = 0; i < numColumns; i++)
+        {
+            columnarFileMetadata.attributeType[i] = type[i].attrType;
+            columnarFileMetadata.columnNames[i] = columnNames[i];
+        }
+        columnarFileMetadata.getTuple();
+        columnarFile.insertRecord(columnarFileMetadata.data);
+    }
+
     public ColumnarFileMetadata getColumnarFileMetadata(String columnarFileName)
     {
         ColumnarFileMetadata result = new ColumnarFileMetadata();
@@ -278,14 +288,26 @@ public class Columnarfile {
             try {
                 Heapfile hf = new Heapfile(columnarFileName);
                 RID rid = new RID();
-                Tuple tuple = new Tuple();
                 Scan s = hf.openScan();
-                tuple = s.getNext(rid);
+                Tuple tuple = s.getNext(rid);
                 result.getColumnarFileMetadata(tuple);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
+
+            return result;
         }
     }
 
+    public Heapfile getHeapfile(String columnName)
+    {
+        for(int i = 0; i < columnNames.length; i++)
+        {
+            if(columnNames[i].equalsIgnoreCase(columnName))
+            {
+                return heapfiles[i];
+            }
+        }
+        return null;
+    }
 }

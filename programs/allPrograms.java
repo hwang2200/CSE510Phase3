@@ -1,12 +1,17 @@
 package programs;
 
+import btree.BTreeFile;
 import columnar.ColumnarFileMetadata;
 import columnar.Columnarfile;
 import diskmgr.ColumnDB;
 import diskmgr.PCounter;
 import global.AttrType;
 import global.Convert;
+import global.RID;
 import global.SystemDefs;
+import heap.Heapfile;
+import heap.Scan;
+import heap.Tuple;
 import value.IntegerValueClass;
 import value.StringValueClass;
 import value.ValueClass;
@@ -81,8 +86,8 @@ public class allPrograms {
                     System.out.println("Please enter in the Index Type (\"BTREE\", or \"BITMAP\"): ");
                     String indexType = scanner.nextLine();
 
-                    queryArgs = new String[]{colDBName, columnarFileName, columnName, indexType, columnarFile};
-                    index(queryArgs);
+                    queryArgs = new String[]{colDBName, columnarFileName, columnName, indexType};
+                    index(queryArgs, columnarFile);
 
                     //scan2.close();
                     break;
@@ -217,25 +222,25 @@ public class allPrograms {
             ColumnarFileMetadata columnarMetadata = cf.getColumnarFileMetadata(columnarfileName);
             cf.columnNames = columnarMetadata.columnNames;
 
+            //Get heapfile associated with that column
+            Heapfile hf = cf.getHeapfile(columnName);
+
             //Maybe not needed
-            BufferedReader br = new BufferedReader(new FileReader(columnarfileName));
+            /*BufferedReader br = new BufferedReader(new FileReader(columnarfileName));
             String[] columns = br.readLine().split(" ");   // read in column
             System.out.println(columns);
+            */
 
             int columnNum = 0;
 
-            for (int i = 0; i < columns.length; i++) {      // find column number from name
-                String[] columnNames = columns[i].split(":");
-                System.out.println(Arrays.toString(columnNames));
-
-                if (columnNames[0].equals(columnName)) {
+            for (int i = 0; i < cf.columnNames.length; i++) {      // find column number from name
+                if (cf.columnNames[i].equals(columnName)) {
                     columnNum = i;
                 }
             }
 
-            cf = new Columnarfile(columnarfileName, columnNum, null);    // create cf with name and number
+            //cf = new Columnarfile(columnarfileName, columnNum, null);    // create cf with name and number
             cf.createBTreeIndex(columnNum); // creates BTreeIndex
-            br.close(); // closes br
 
         } catch (Exception e) {
             e.printStackTrace();
