@@ -12,6 +12,7 @@ import global.SystemDefs;
 import heap.Heapfile;
 import heap.Scan;
 import heap.Tuple;
+import org.w3c.dom.Attr;
 import value.IntegerValueClass;
 import value.StringValueClass;
 import value.ValueClass;
@@ -250,45 +251,41 @@ public class allPrograms {
         try {
             ColumnarFileMetadata columnarMetadata = cf.getColumnarFileMetadata();
             cf.columnNames = columnarMetadata.columnNames;
+            //System.out.println(Arrays.toString(cf.columnNames));
 
             //Maybe not needed
-            BufferedReader br = new BufferedReader(new FileReader(columnarfileName));
-            String[] columns = br.readLine().split(" ");    // read in columns
+            //BufferedReader br = new BufferedReader(new FileReader(columnarfileName));
+            //String[] columns = br.readLine().split(" ");    // read in columns
 
             int columnNum = 0;
             boolean intOrString = false;
             ValueClass valueI = new IntegerValueClass();
             ValueClass valueS = new StringValueClass();
 
-
-            for (int i = 0; i < columns.length; i++)
+            for (int i = 0; i < cf.columnNames.length; i++)
             {
-                String[] columnNames = columns[i].split(":");   // find column name
-
-                if (columnNames[0].equals(columnName))
+                if (cf.columnNames[i].equals(columnName))
                 {
                     columnNum = i;
-                    if (columnNames[1].equals("int"))
-                    {  // need type either int or string
-                        intOrString = false;
+                    if (cf.type[i].attrType == AttrType.attrInteger || cf.type[i].attrType == AttrType.attrString)
+                    {
+                        intOrString = true;
                     }
                     else
                     {
-                        intOrString = true;
+                        intOrString = false;
                     }
 
                 }
             }
 
-            cf = new Columnarfile(columnarfileName, columns, columnNum, null);
+            //cf = new Columnarfile(columnarfileName, columns, columnNum, null);
             if(intOrString){
                 cf.createBitMapIndex(columnNum, valueI);    // bitmap index with int
             }
             else{
                 cf.createBitMapIndex(columnNum, valueS);        // bitmap index with string
             }
-
-            br.close();
         } catch (Exception e) {
             e.printStackTrace();
         }

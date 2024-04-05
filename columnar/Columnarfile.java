@@ -38,6 +38,7 @@ public class Columnarfile {
         this.heapfiles = new Heapfile[numColumns];
         this.heapFileNames = new String[numColumns];
         this.columnNames = colNames;
+
         // Create a heapfile for each column
         for (int i = 0; i < numColumns; i++) {
             String heapName = this.name + ".columnid" + i;
