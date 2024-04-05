@@ -2,6 +2,7 @@ package columnar;
 
 import global.AttrType;
 import global.Convert;
+import global.PageId;
 import global.RID;
 import heap.*;
 import TID.*;
@@ -20,6 +21,7 @@ public class Columnarfile {
     public static int numColumns;
     public AttrType[] type;
     public Heapfile[] heapfiles;
+    public String[] heapFileNames;
     public Heapfile columnarFile;
 
     public int tupleLength;
@@ -28,22 +30,26 @@ public class Columnarfile {
 
     public ColumnarFileMetadata columnarFileMetadata;
 
-    public Columnarfile(String name, int numColumns, AttrType[] type)
-            throws IOException, HFDiskMgrException, HFException, HFBufMgrException {
+    public Columnarfile(String name, String[] colNames, int numColumns, AttrType[] type)
+            throws IOException, HFDiskMgrException, HFException, HFBufMgrException, SpaceNotAvailableException, InvalidSlotNumberException, InvalidTupleSizeException {
         this.name = name;
         Columnarfile.numColumns = numColumns;
         this.type = type;
         this.heapfiles = new Heapfile[numColumns];
-
+        this.heapFileNames = new String[numColumns];
+        this.columnNames = colNames;
         // Create a heapfile for each column
         for (int i = 0; i < numColumns; i++) {
-            heapfiles[i] = new Heapfile(this.name + ".columnid" + i);
+            String heapName = this.name + ".columnid" + i;
+            heapfiles[i] = new Heapfile(heapName);
+            heapFileNames[i] = heapName;
         }
 
         // Initialize the metadata file
         columnarFileMetadata = new ColumnarFileMetadata(this);
         columnarFile = new Heapfile(this.name + ".hdr");
         columnarFileMetadata.columnarFileName = name;
+        setColumnarFileMetadata();
 
     }
 
@@ -196,21 +202,28 @@ public class Columnarfile {
     public boolean createBTreeIndex(int column) throws Exception {
         KeyClass key = null;
         TID tid = new TID(numColumns);
+        tid.numRIDs = numColumns;
+        tid.recordIDs = new RID[numColumns];
         int keyType = 0;
         int keySize = 4;
-        // int offset = 0;
 
-        for (int i = 0; i < numColumns; i++) {
-            keyType = type[i].attrType;
-            // Tuple tuple = heapfiles[i].getRecord(tid.recordIDs[i]);
-            // byte[] dataArray = tuple.returnTupleByteArray();
-            // int dataInt = Convert.getIntValue(offset, dataArray);
-            key = new IntegerKey(i);
-            // KeyDataEntry pair = new KeyDataEntry(key, tid.recordIDs[i]);
-            BTreeFile btreeFile = new BTreeFile("BTree File " + i, keyType, keySize, DeleteFashion.FULL_DELETE);
-
-            btreeFile.insert(key, tid.recordIDs[i]);
+        keyType = type[column].attrType;
+        if(type[column].attrType == AttrType.attrInteger)
+        {
+            key = new IntegerKey(column);
         }
+        else{
+            key = new StringKey(columnNames[column]);
+            keySize = 25;
+        }
+        // Tuple tuple = heapfiles[i].getRecord(tid.recordIDs[i]);
+        // byte[] dataArray = tuple.returnTupleByteArray();
+        // int dataInt = Convert.getIntValue(offset, dataArray);
+        // KeyDataEntry pair = new KeyDataEntry(key, tid.recordIDs[i]);
+        BTreeFile btreeFile = new BTreeFile("BTree File " + column, keyType, keySize, DeleteFashion.FULL_DELETE);
+
+        btreeFile.insert(key, tid.recordIDs[column]);
+
         return true;
     }
 
@@ -277,26 +290,9 @@ public class Columnarfile {
         columnarFile.insertRecord(columnarFileMetadata.data);
     }
 
-    public ColumnarFileMetadata getColumnarFileMetadata(String columnarFileName)
+    public ColumnarFileMetadata getColumnarFileMetadata()
     {
-        ColumnarFileMetadata result = new ColumnarFileMetadata();
-        if(name == null)
-        {
-            return null;
-        }
-        else {
-            try {
-                Heapfile hf = new Heapfile(columnarFileName);
-                RID rid = new RID();
-                Scan s = hf.openScan();
-                Tuple tuple = s.getNext(rid);
-                result.getColumnarFileMetadata(tuple);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-
-            return result;
-        }
+        return this.columnarFileMetadata;
     }
 
     public Heapfile getHeapfile(String columnName)
@@ -309,5 +305,23 @@ public class Columnarfile {
             }
         }
         return null;
+    }
+
+    @Override
+    public String toString()
+    {
+        String result = "";
+        result += ("ColumnarFileName: " + this.name +"\n");
+
+        for(int i = 0; i < numColumns; i++)
+        {
+            try {
+                System.out.println(columnNames[i] + ": " + heapfiles[i].getRecCnt());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return result;
     }
 }

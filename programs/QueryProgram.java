@@ -395,7 +395,7 @@ public class QueryProgram {
                     columnTypes[i] = new AttrType(AttrType.attrString);
                 }
             }
-            Columnarfile columnarFile = new Columnarfile(columnarFileName, targetColumnNames.length, columnTypes);
+            Columnarfile columnarFile = new Columnarfile(columnarFileName, targetColumnNames, targetColumnNames.length, columnTypes);
 
             // Open the bitmap file for the specified column
             BitMapFile bitmapFile = new BitMapFile(columnarFileName);

@@ -28,9 +28,9 @@ public class ColumnarFileMetadata {
         this.tupleLength = columnarFile.tupleLength;
         this.stringSize = 25;
         this.attributeType = new int[numberOfColumns];
-        //this.heapFileNames = columnarFile.heapFileNames;
+        this.heapFileNames = columnarFile.heapFileNames;
         this.columnNames = columnarFile.columnNames;
-        this.data = new byte[stringSize];
+        this.data = new byte[(((2*25) + 4) * 4) + stringSize + (3*4)];
     }
 
     public void getColumnarFileMetadata (Tuple tuple) {

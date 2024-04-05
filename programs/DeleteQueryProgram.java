@@ -213,7 +213,7 @@ public class DeleteQueryProgram {
                     columnTypes[i] = new AttrType(AttrType.attrString);
                 }
             }
-            Columnarfile columnarFile = new Columnarfile(columnarFileName, targetColumnNames.length, columnTypes);
+            Columnarfile columnarFile = new Columnarfile(columnarFileName, columnNames, targetColumnNames.length, columnTypes);
 
             TID tid = new TID(targetColumnNames.length);
 
@@ -362,7 +362,7 @@ public class DeleteQueryProgram {
                     columnTypess[i] = new AttrType(AttrType.attrString);
                 }
             }
-            Columnarfile columnarFile = new Columnarfile(columnarFileName, targetColumnNames.length, columnTypess);
+            Columnarfile columnarFile = new Columnarfile(columnarFileName, columnNamess, targetColumnNames.length, columnTypess);
 
             // Perform column scan
             Tuple tuple;
@@ -405,7 +405,7 @@ public class DeleteQueryProgram {
                     columnTypes[i] = new AttrType(AttrType.attrString);
                 }
             }
-            Columnarfile columnarFile = new Columnarfile(columnarFileName, targetColumnNames.length, columnTypes);
+            Columnarfile columnarFile = new Columnarfile(columnarFileName, columnNames, targetColumnNames.length, columnTypes);
 
             if (delete)
                 columnarFile.purgeAllDeletedTuples();
@@ -432,7 +432,7 @@ public class DeleteQueryProgram {
                     columnTypes[i] = new AttrType(AttrType.attrString);
                 }
             }
-            Columnarfile columnarFile = new Columnarfile(columnarFileName, targetColumnNames.length, columnTypes);
+            Columnarfile columnarFile = new Columnarfile(columnarFileName, columnNames, targetColumnNames.length, columnTypes);
 
             // Open the bitmap file for the specified column
             BitMapFile bitmapFile = new BitMapFile(columnarFileName);

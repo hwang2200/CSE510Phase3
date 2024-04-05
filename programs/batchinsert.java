@@ -75,7 +75,7 @@ public class batchinsert
                 }
             }
 
-            cf = new Columnarfile(columnarfileName, columnNames.length, columnTypes);
+            cf = new Columnarfile(columnarfileName, columnNames, columnNames.length, columnTypes);
 
 
             //Read data from data file

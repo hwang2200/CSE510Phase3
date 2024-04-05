@@ -61,7 +61,7 @@ public class allPrograms {
                     String[] queryArgs = {dataFileName, colDBName, columnarFileName, numColumns};
 
                     columnarFile = batchInsert(queryArgs);
-                    //System.out.println(columnarFile);
+                    System.out.println(columnarFile.toString());
 
                     //scan1.close();
                     break;
@@ -143,8 +143,9 @@ public class allPrograms {
                 }
             }
 
-            cf = new Columnarfile(columnarfileName, columnNames.length, columnTypes);
+            cf = new Columnarfile(columnarfileName, columnNames, columnNames.length, columnTypes);
 
+            System.out.println(Arrays.toString(cf.columnNames));
             //Read data from data file
             byte[] dataFileArray = new byte[25+25+4+4];
             int offset = 0;
@@ -219,7 +220,7 @@ public class allPrograms {
     public static void createBTree(Columnarfile cf, String columnarfileName, String columnName){
         try {
             //We could either do it this way or find a way to create a columnarfile and store it locally (which might be harder)
-            ColumnarFileMetadata columnarMetadata = cf.getColumnarFileMetadata(columnarfileName);
+            ColumnarFileMetadata columnarMetadata = cf.getColumnarFileMetadata();
             cf.columnNames = columnarMetadata.columnNames;
 
             //Get heapfile associated with that column
@@ -249,7 +250,7 @@ public class allPrograms {
 
     public static void createBitMap(Columnarfile cf, String columnarfileName, String columnName){
         try {
-            ColumnarFileMetadata columnarMetadata = cf.getColumnarFileMetadata(columnarfileName);
+            ColumnarFileMetadata columnarMetadata = cf.getColumnarFileMetadata();
             cf.columnNames = columnarMetadata.columnNames;
 
             //Maybe not needed
@@ -281,7 +282,7 @@ public class allPrograms {
                 }
             }
 
-            cf = new Columnarfile(columnarfileName, columnNum, null);
+            cf = new Columnarfile(columnarfileName, columns, columnNum, null);
             if(intOrString){
                 cf.createBitMapIndex(columnNum, valueI);    // bitmap index with int
             }

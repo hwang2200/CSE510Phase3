@@ -102,7 +102,7 @@ public class index {
                 }
             }
 
-            Columnarfile cf = new Columnarfile(columnarfileName, columnNum, null);    // create cf with name and number
+            Columnarfile cf = new Columnarfile(columnarfileName, columns,  columnNum, null);    // create cf with name and number
             cf.createBTreeIndex(columnNum); // creates BTreeIndex
             br.close(); // closes br
 
@@ -135,7 +135,7 @@ public class index {
                 }
             }
             
-            Columnarfile cf = new Columnarfile(columnarfileName, columnNum, null);
+            Columnarfile cf = new Columnarfile(columnarfileName, columns, columnNum, null);
             if(intOrString){
                 cf.createBitMapIndex(columnNum, valueI);    // bitmap index with int
             }
