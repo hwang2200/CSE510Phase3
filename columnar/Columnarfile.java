@@ -201,9 +201,11 @@ public class Columnarfile {
 
     public boolean createBTreeIndex(int column) throws Exception {
         KeyClass key = null;
-        TID tid = new TID(numColumns);
-        tid.numRIDs = numColumns;
-        tid.recordIDs = new RID[numColumns];
+        //TID tid = new TID(numColumns);
+        //tid.numRIDs = numColumns;
+        //tid.recordIDs = new RID[numColumns];
+        //System.out.println(heapfiles[column]);
+
         int keyType = 0;
         int keySize = 4;
 
@@ -216,15 +218,30 @@ public class Columnarfile {
             key = new StringKey(columnNames[column]);
             keySize = 25;
         }
-        // Tuple tuple = heapfiles[i].getRecord(tid.recordIDs[i]);
+
+        System.out.println(heapfiles[column].getRecCnt()); //throws invalid slot number for rid
+
+        BTreeFile btreeFile = new BTreeFile("BTree File " + column, keyType, keySize, DeleteFashion.FULL_DELETE);
+
+        RID rid = new RID();
+        Scan s = heapfiles[column].openScan();
+        Tuple tuple = s.getNext(rid); // tuple is also null, probably bc the rid is not set but
+
+        if(tuple != null)
+        {
+            btreeFile.insert(key, rid);
+            System.out.println("Index created!");
+        }
+        else {
+            System.out.println("Failure");
+        }
+
+        return true;
+
+        // Tuple tuple = heapfiles[column].getRecord(tid.recordIDs[column]);
         // byte[] dataArray = tuple.returnTupleByteArray();
         // int dataInt = Convert.getIntValue(offset, dataArray);
         // KeyDataEntry pair = new KeyDataEntry(key, tid.recordIDs[i]);
-        BTreeFile btreeFile = new BTreeFile("BTree File " + column, keyType, keySize, DeleteFashion.FULL_DELETE);
-
-        btreeFile.insert(key, tid.recordIDs[column]);
-
-        return true;
     }
 
     public boolean createBitMapIndex(int columnNo, ValueClass value) {

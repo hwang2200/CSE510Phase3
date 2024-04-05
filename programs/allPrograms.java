@@ -223,9 +223,6 @@ public class allPrograms {
             ColumnarFileMetadata columnarMetadata = cf.getColumnarFileMetadata();
             cf.columnNames = columnarMetadata.columnNames;
 
-            //Get heapfile associated with that column
-            Heapfile hf = cf.getHeapfile(columnName);
-
             //Maybe not needed
             /*BufferedReader br = new BufferedReader(new FileReader(columnarfileName));
             String[] columns = br.readLine().split(" ");   // read in column
@@ -239,6 +236,7 @@ public class allPrograms {
                     columnNum = i;
                 }
             }
+            //System.out.println(columnNum);
 
             //cf = new Columnarfile(columnarfileName, columnNum, null);    // create cf with name and number
             cf.createBTreeIndex(columnNum); // creates BTreeIndex

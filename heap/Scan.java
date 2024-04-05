@@ -477,7 +477,6 @@ public class Scan implements GlobalConst {
 
         datapageId.pid = INVALID_PAGE;
       }
-
       catch (Exception e) {
 
       }
