@@ -238,11 +238,6 @@ public class Columnarfile {
         }
 
         return true;
-
-        // Tuple tuple = heapfiles[column].getRecord(tid.recordIDs[column]);
-        // byte[] dataArray = tuple.returnTupleByteArray();
-        // int dataInt = Convert.getIntValue(offset, dataArray);
-        // KeyDataEntry pair = new KeyDataEntry(key, tid.recordIDs[i]);
     }
 
     public boolean createBitMapIndex(int columnNo, ValueClass value) {
