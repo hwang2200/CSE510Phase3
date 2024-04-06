@@ -258,33 +258,30 @@ public class allPrograms {
             //String[] columns = br.readLine().split(" ");    // read in columns
 
             int columnNum = 0;
-            boolean intOrString = false;
-            ValueClass valueI = new IntegerValueClass();
-            ValueClass valueS = new StringValueClass();
+            IntegerValueClass valueI = new IntegerValueClass();
+            StringValueClass valueS = new StringValueClass();
 
+            //Loops through all of the columns
             for (int i = 0; i < cf.columnNames.length; i++)
             {
                 if (cf.columnNames[i].equals(columnName))
                 {
                     columnNum = i;
-                    if (cf.type[i].attrType == AttrType.attrInteger || cf.type[i].attrType == AttrType.attrString)
-                    {
-                        intOrString = true;
-                    }
-                    else
-                    {
-                        intOrString = false;
-                    }
-
                 }
             }
 
             //cf = new Columnarfile(columnarfileName, columns, columnNum, null);
-            if(intOrString){
-                cf.createBitMapIndex(columnNum, valueI);    // bitmap index with int
+            if (cf.type[columnNum].attrType == AttrType.attrInteger)
+            {
+                int value = Convert.getIntValue(0, //tuple from which we need to get the byte array)
+                valueI.setValue(//value);
+                cf.createBitMapIndex(columnNum, valueI);
             }
-            else{
-                cf.createBitMapIndex(columnNum, valueS);        // bitmap index with string
+            else if (cf.type[columnNum].attrType == AttrType.attrString)
+            {
+                String value = Convert.getStrValue(0, //tuple from which we need to get the byte array)
+                valueS.setValue(//value);
+                cf.createBitMapIndex(columnNum, valueS);
             }
         } catch (Exception e) {
             e.printStackTrace();

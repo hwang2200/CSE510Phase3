@@ -242,8 +242,10 @@ public class Columnarfile {
 
     public boolean createBitMapIndex(int columnNo, ValueClass value) {
         try {
-            new BitMapFile(this.name, this, columnNo, value);
-            
+            System.out.println("ColNum: " + columnNo);
+            System.out.println("ValueClass: " + value);
+            BitMapFile bitmapFile = new BitMapFile(this.name + columnNo, this, columnNo, value);
+
             return true;
         } catch (Exception e) {
             e.printStackTrace();
