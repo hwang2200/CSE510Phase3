@@ -397,6 +397,8 @@ public class HFPage extends Page
 	System.arraycopy (record, 0, data, usedPtr, recLen);
 	curPage.pid = Convert.getIntValue (CUR_PAGE, data);
 	rid.pageNo.pid = curPage.pid;
+    //TODO: DELETE
+          System.out.println("Slot Number assigned: " + i + " for RID: " + rid);
 	rid.slotNo = i;
 	return   rid ;
       }
@@ -563,7 +565,7 @@ public class HFPage extends Page
       recLen = getSlotLength (slotNo);
       slotCnt = Convert.getShortValue (SLOT_CNT, data);
 
-      //Remove later
+      //TODO: Remove later
       System.out.println("Slot no: " + slotNo + ", Slot Count: " + slotCnt + ", Record length: " + recLen);
 
       if (( slotNo >=0) && (slotNo < slotCnt) && (recLen >0) 

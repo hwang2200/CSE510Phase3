@@ -83,7 +83,7 @@ public class Columnarfile {
                 Convert.setIntValue(dataInt, 0, newData);
                 offset = offset + 4;
 
-                tid.recordIDs[i] = new RID();
+                //tid.recordIDs[i] = new RID();
                 tid.recordIDs[i] = heapfiles[i].insertRecord(newData);
             }
             if (type[i].attrType == AttrType.attrString) {
@@ -220,22 +220,39 @@ public class Columnarfile {
             keySize = 25;
         }
 
-        System.out.println(heapfiles[column].getRecCnt()); //throws invalid slot number for rid
-
         BTreeFile btreeFile = new BTreeFile("BTree File " + column, keyType, keySize, DeleteFashion.FULL_DELETE);
 
         RID rid = new RID();
         Scan s = heapfiles[column].openScan();
         Tuple tuple = s.getNext(rid); // tuple is also null, probably bc the rid is not set but
 
-        if(tuple != null)
+
+        while(tuple != null)
         {
             btreeFile.insert(key, rid);
-            System.out.println("Index created!");
+
+            System.out.println("Tuple created! RID: " + rid);
+            tuple = s.getNext(rid);
         }
-        else {
-            System.out.println("Failure");
-        }
+
+        //TODO:DELETE
+            try {
+                BTFileScan btscan = btreeFile.new_scan(null, null);
+
+                KeyDataEntry tmpKDE = btscan.get_next();
+                while (tmpKDE != null) {
+                    LeafData tmpData = (LeafData) tmpKDE.data;
+                    System.out.println("LeafData: " + tmpData);
+                    //RID tmpRid = tmpData.getData();
+                    //System.out.println("RID: " + tmpRid);
+                    tmpKDE = btscan.get_next();
+                }
+
+            }
+            catch (Exception e)
+            {
+                System.out.println("Error occurred while doing BTScan");
+            }
 
         return true;
     }
@@ -327,11 +344,11 @@ public class Columnarfile {
     {
         String result = "";
         result += ("ColumnarFileName: " + this.name +"\n");
-
+        result += ("ColumnNums: " + numColumns + "\n");
         for(int i = 0; i < numColumns; i++)
         {
             try {
-                System.out.println(columnNames[i] + ": " + heapfiles[i].getRecCnt());
+                result += columnNames[i] + ": " + heapfiles[i].getRecCnt();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

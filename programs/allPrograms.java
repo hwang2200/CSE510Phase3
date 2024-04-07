@@ -62,7 +62,7 @@ public class allPrograms {
                     String[] queryArgs = {dataFileName, colDBName, columnarFileName, numColumns};
 
                     columnarFile = batchInsert(queryArgs);
-                    System.out.println(columnarFile.toString());
+                    //System.out.println(columnarFile.toString());
 
                     //scan1.close();
                     break;
@@ -116,9 +116,9 @@ public class allPrograms {
                 System.out.println("Usage: java BatchInsert DATAFILENAME COLUMNDBNAME COLUMNARFILENAME NUMCOLUMNS");
                 System.exit(1);
             }
-            String datafileName = args[0];
-            String columnDBName = args[1];
-            String columnarfileName = args[2];
+            String datafileName = args[0] + ".txt";
+            String columnDBName = args[1] + "DB";
+            String columnarfileName = args[2] + "COL";
             int numColumns = Integer.parseInt(args[3]);
 
             SystemDefs sysDefs = new SystemDefs(columnDBName, 100000, 100, "Clock");
@@ -146,7 +146,6 @@ public class allPrograms {
 
             cf = new Columnarfile(columnarfileName, columnNames, columnNames.length, columnTypes);
 
-            System.out.println(Arrays.toString(cf.columnNames));
             //Read data from data file
             byte[] dataFileArray = new byte[25+25+4+4];
             int offset = 0;
@@ -180,8 +179,7 @@ public class allPrograms {
     }
 
     public static void index(String[] args, Columnarfile cf){
-        PCounter.initialize();
-        Scanner scanner = new Scanner(System.in);
+        //PCounter.initialize();
         if (args.length != 4) { // checks length
             System.out.println("Usage: java Index COLUMNDBNAME COLUMNARFILENAME COLUMNAME INDEXTYPE");
             System.exit(1);
@@ -193,9 +191,6 @@ public class allPrograms {
         String indexType = (args[3]).toUpperCase();
 
         try {
-            SystemDefs sysDefs = new SystemDefs(columnDBName, 100000, 100, "Clock");
-            ColumnDB testDB = new ColumnDB();   // open columnDB and type of index
-            testDB.openDB(columnDBName);
 
             if(indexType.equals("BTREE")){
                 createBTree(cf, columnarfileName, columnName);
@@ -209,9 +204,9 @@ public class allPrograms {
             }
 
             // Print out the number of disk pages read and written
-            System.out.println("Number of disk pages read: " + PCounter.getReadCount());
-            System.out.println("Number of disk pages written: " + PCounter.getWriteCount());
-            scanner.close();
+            //System.out.println("Number of disk pages read: " + PCounter.getReadCount());
+            //System.out.println("Number of disk pages written: " + PCounter.getWriteCount());
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -220,26 +215,20 @@ public class allPrograms {
 
     public static void createBTree(Columnarfile cf, String columnarfileName, String columnName){
         try {
-            //We could either do it this way or find a way to create a columnarfile and store it locally (which might be harder)
-            ColumnarFileMetadata columnarMetadata = cf.getColumnarFileMetadata();
-            cf.columnNames = columnarMetadata.columnNames;
 
-            //Maybe not needed
-            /*BufferedReader br = new BufferedReader(new FileReader(columnarfileName));
-            String[] columns = br.readLine().split(" ");   // read in column
-            System.out.println(columns);
-            */
-
-            int columnNum = 0;
+            int columnNum = -1;
 
             for (int i = 0; i < cf.columnNames.length; i++) {      // find column number from name
                 if (cf.columnNames[i].equals(columnName)) {
                     columnNum = i;
                 }
             }
-            //System.out.println(columnNum);
+            if(columnNum == -1)
+            {
+                System.out.println("Column not found for createBTree function");
+                return;
+            }
 
-            //cf = new Columnarfile(columnarfileName, columnNum, null);    // create cf with name and number
             cf.createBTreeIndex(columnNum); // creates BTreeIndex
 
         } catch (Exception e) {
@@ -273,15 +262,15 @@ public class allPrograms {
             //cf = new Columnarfile(columnarfileName, columns, columnNum, null);
             if (cf.type[columnNum].attrType == AttrType.attrInteger)
             {
-                int value = Convert.getIntValue(0, //tuple from which we need to get the byte array)
-                valueI.setValue(//value);
-                cf.createBitMapIndex(columnNum, valueI);
+                //int value = Convert.getIntValue(0, //tuple from which we need to get the byte array)
+                //valueI.setValue(//value);
+                //cf.createBitMapIndex(columnNum, valueI);
             }
             else if (cf.type[columnNum].attrType == AttrType.attrString)
             {
-                String value = Convert.getStrValue(0, //tuple from which we need to get the byte array)
-                valueS.setValue(//value);
-                cf.createBitMapIndex(columnNum, valueS);
+                //String value = Convert.getStrValue(0, //tuple from which we need to get the byte array)
+                //valueS.setValue(//value);
+                //cf.createBitMapIndex(columnNum, valueS);
             }
         } catch (Exception e) {
             e.printStackTrace();
