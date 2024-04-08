@@ -179,7 +179,7 @@ public class allPrograms {
     }
 
     public static void index(String[] args, Columnarfile cf){
-        //PCounter.initialize();
+        PCounter.initialize();
         if (args.length != 4) { // checks length
             System.out.println("Usage: java Index COLUMNDBNAME COLUMNARFILENAME COLUMNAME INDEXTYPE");
             System.exit(1);
@@ -204,8 +204,8 @@ public class allPrograms {
             }
 
             // Print out the number of disk pages read and written
-            //System.out.println("Number of disk pages read: " + PCounter.getReadCount());
-            //System.out.println("Number of disk pages written: " + PCounter.getWriteCount());
+            System.out.println("Number of disk pages read: " + PCounter.getReadCount());
+            System.out.println("Number of disk pages written: " + PCounter.getWriteCount());
 
 
         } catch (Exception e) {
@@ -215,7 +215,6 @@ public class allPrograms {
 
     public static void createBTree(Columnarfile cf, String columnarfileName, String columnName){
         try {
-
             int columnNum = -1;
 
             for (int i = 0; i < cf.columnNames.length; i++) {      // find column number from name
@@ -240,37 +239,41 @@ public class allPrograms {
         try {
             ColumnarFileMetadata columnarMetadata = cf.getColumnarFileMetadata();
             cf.columnNames = columnarMetadata.columnNames;
-            //System.out.println(Arrays.toString(cf.columnNames));
 
-            //Maybe not needed
-            //BufferedReader br = new BufferedReader(new FileReader(columnarfileName));
-            //String[] columns = br.readLine().split(" ");    // read in columns
-
-            int columnNum = 0;
+            int columnNum = -1;
             IntegerValueClass valueI = new IntegerValueClass();
             StringValueClass valueS = new StringValueClass();
 
-            //Loops through all of the columns
-            for (int i = 0; i < cf.columnNames.length; i++)
-            {
-                if (cf.columnNames[i].equals(columnName))
-                {
+            //Loops through all columns
+            for (int i = 0; i < cf.columnNames.length; i++) {
+                if (cf.columnNames[i].equals(columnName)) {
                     columnNum = i;
                 }
             }
-
-            //cf = new Columnarfile(columnarfileName, columns, columnNum, null);
-            if (cf.type[columnNum].attrType == AttrType.attrInteger)
+            if(columnNum == -1)
             {
-                //int value = Convert.getIntValue(0, //tuple from which we need to get the byte array)
-                //valueI.setValue(//value);
-                //cf.createBitMapIndex(columnNum, valueI);
+                System.out.println("Column not found for createBitMap function");
+                return;
             }
-            else if (cf.type[columnNum].attrType == AttrType.attrString)
-            {
-                //String value = Convert.getStrValue(0, //tuple from which we need to get the byte array)
-                //valueS.setValue(//value);
-                //cf.createBitMapIndex(columnNum, valueS);
+            //System.out.println(cf.heapfiles[columnNum]);
+            RID rid = new RID();
+            Scan s = cf.heapfiles[columnNum].openScan();
+            Tuple tuple = s.getNext(rid);
+
+            //System.out.println(Arrays.toString(tuple.getTupleByteArray()));
+
+            while(tuple != null) {
+                if (cf.type[columnNum].attrType == AttrType.attrInteger) {
+                    int value = Convert.getIntValue(0, tuple.getTupleByteArray());
+                    valueI.setValue(value);
+                    cf.createBitMapIndex(columnNum, valueI);
+
+                } else if (cf.type[columnNum].attrType == AttrType.attrString) {
+                    String value = Convert.getStrValue(0, tuple.getTupleByteArray(), 25);
+                    valueS.setValue(value);
+                    cf.createBitMapIndex(columnNum, valueS);
+                }
+                tuple = s.getNext(rid);
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -17,17 +17,17 @@ public class BitMapFile
 	private BitMapHeaderPage headerPage;
 	private PageId headerPageId;
 	private String dbname;
+	private final static int MAGIC0=1989;
 
-	public BitMapFile(java.lang.String filename)
+	public BitMapFile(String filename)
 			throws GetFileEntryException,
-			PinPageException,
 			ConstructPageException {
 		headerPageId = get_file_entry(filename);
 		headerPage = new BitMapHeaderPage(headerPageId);
-		dbname = new String(filename);
+		dbname = filename;
 	}
 
-	public BitMapFile(java.lang.String filename, Columnarfile columnfile, int ColumnNo, ValueClass value)
+	public BitMapFile(String filename, Columnarfile columnFile, int ColumnNo, ValueClass value)
 			throws GetFileEntryException,
 			ConstructPageException,
 			IOException,
@@ -39,11 +39,16 @@ public class BitMapFile
 			headerPage = new BitMapHeaderPage();
 			headerPageId = headerPage.getPageId();
 			add_file_entry(filename, headerPageId);
+			headerPage.set_magic0(MAGIC0);
+			headerPage.set_colNum(ColumnNo);
+			headerPage.set_rootId(new PageId(INVALID_PAGE));
+			headerPage.setType(NodeType.BTHEAD);
 		} else
 			headerPage = new BitMapHeaderPage(headerPageId);
 
-		dbname = new String(filename);
+		dbname = filename;
 
+		/*
 		Page page = new Page();
 
 		// Sets the header key for the value type
@@ -61,8 +66,9 @@ public class BitMapFile
 
 		headerPage.setNextPage(bmPage.getCurPage());
 
-		Scan scan = columnfile.openColumnScan(ColumnNo);
+		Scan scan = columnFile.openColumnScan(ColumnNo);
 		Tuple data = scan.getNext(scan.getUserRID());
+		 */
 
 	}
 
@@ -227,7 +233,7 @@ public class BitMapFile
 		}
 	}
 
-	public bitmap.BitMapHeaderPage getHeaderPage() {
+	public BitMapHeaderPage getHeaderPage() {
 		return headerPage;
 	}
 

@@ -4,6 +4,7 @@ package global;
 
 import java.io.*;
 import java.lang.*;
+import java.util.Arrays;
 
 public class Convert{
  
@@ -178,7 +179,9 @@ public class Convert{
       // valid contents of the buffer have been copied into it
       byte []B = ((ByteArrayOutputStream) out).toByteArray();
       
-      // copies the first 4 bytes of this byte array into data[] 
+      // copies the first 4 bytes of this byte array into data[]
+      //TODO
+      System.out.println("Array: " + Arrays.toString(B));
       System.arraycopy (B, 0, data, position, 4);
       
     }

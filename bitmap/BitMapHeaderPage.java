@@ -51,12 +51,32 @@ public class BitMapHeaderPage extends HFPage {
 
     void set_keyType(short key_type)
             throws IOException {
-        setSlot(3, (int) key_type, 0);
+        setSlot(1, (int) key_type, 0);
     }
 
     short get_keyType()
             throws IOException {
-        return (short) getSlotLength(3);
+        return (short) getSlotLength(1);
+    }
+
+    void set_colNum(int colNum) throws IOException {
+        setSlot(2, colNum, 0);
+    }
+
+    int get_colNum(int colNum) throws IOException {
+        return getSlotLength(2);
+    }
+
+    void  set_rootId( PageId rootID )
+            throws IOException
+    {
+        setNextPage(rootID);
+    }
+
+    PageId get_rootId()
+            throws IOException
+    {
+        return getNextPage();
     }
 
 }

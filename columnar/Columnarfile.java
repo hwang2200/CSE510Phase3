@@ -226,7 +226,6 @@ public class Columnarfile {
         Scan s = heapfiles[column].openScan();
         Tuple tuple = s.getNext(rid); // tuple is also null, probably bc the rid is not set but
 
-
         while(tuple != null)
         {
             btreeFile.insert(key, rid);
@@ -259,8 +258,9 @@ public class Columnarfile {
 
     public boolean createBitMapIndex(int columnNo, ValueClass value) {
         try {
-            System.out.println("ColNum: " + columnNo);
-            System.out.println("ValueClass: " + value);
+            //TODO
+            //System.out.println("ColNum: " + columnNo);
+            //System.out.println("ValueClass: " + value);
             BitMapFile bitmapFile = new BitMapFile(this.name + columnNo, this, columnNo, value);
 
             return true;

@@ -258,6 +258,7 @@ public class HFPage extends Page
       goToPage.pid = pageNo;
       setCurPage(goToPage);
     }
+
   /**
    * @return 	the ype
    * @exception IOException I/O errors
@@ -397,8 +398,6 @@ public class HFPage extends Page
 	System.arraycopy (record, 0, data, usedPtr, recLen);
 	curPage.pid = Convert.getIntValue (CUR_PAGE, data);
 	rid.pageNo.pid = curPage.pid;
-    //TODO: DELETE
-          System.out.println("Slot Number assigned: " + i + " for RID: " + rid);
 	rid.slotNo = i;
 	return   rid ;
       }
@@ -564,9 +563,6 @@ public class HFPage extends Page
       // length of record being returned
       recLen = getSlotLength (slotNo);
       slotCnt = Convert.getShortValue (SLOT_CNT, data);
-
-      //TODO: Remove later
-      System.out.println("Slot no: " + slotNo + ", Slot Count: " + slotCnt + ", Record length: " + recLen);
 
       if (( slotNo >=0) && (slotNo < slotCnt) && (recLen >0) 
 	  && (pageNo.pid == curPage.pid))
