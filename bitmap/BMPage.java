@@ -237,11 +237,11 @@ public class BMPage extends Page
         slotCnt = Convert.getShortValue (SLOT_CNT, data);
         
         for (i= 0; i < slotCnt; i++) 
-    {
-        length = getSlotLength(i);
-        if (length != EMPTY_SLOT)
-        return false;
-    }    
+        {
+            length = getSlotLength(i);
+            if (length != EMPTY_SLOT)
+                return false;
+        }
         
         return true;
     }
