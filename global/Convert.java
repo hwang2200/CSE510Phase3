@@ -180,8 +180,6 @@ public class Convert{
       byte []B = ((ByteArrayOutputStream) out).toByteArray();
       
       // copies the first 4 bytes of this byte array into data[]
-      //TODO
-      System.out.println("Array: " + Arrays.toString(B));
       System.arraycopy (B, 0, data, position, 4);
       
     }

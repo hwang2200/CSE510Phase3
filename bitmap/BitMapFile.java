@@ -3,6 +3,7 @@ package bitmap;
 import btree.*;
 import java.io.*;
 import bufmgr.*;
+import com.sun.jdi.IntegerValue;
 import global.*;
 import columnar.*;
 import value.*;
@@ -16,7 +17,7 @@ public class BitMapFile
 
 	private BitMapHeaderPage headerPage;
 	private PageId headerPageId;
-	private String dbname;
+	private String bmfilename;
 	private final static int MAGIC0=1989;
 
 	public BitMapFile(String filename)
@@ -24,18 +25,19 @@ public class BitMapFile
 			ConstructPageException {
 		headerPageId = get_file_entry(filename);
 		headerPage = new BitMapHeaderPage(headerPageId);
-		dbname = filename;
+		bmfilename = filename;
 	}
 
 	public BitMapFile(String filename, Columnarfile columnFile, int ColumnNo, ValueClass value)
 			throws GetFileEntryException,
 			ConstructPageException,
 			IOException,
-			AddFileEntryException,
-			InvalidTupleSizeException {
-		
+			AddFileEntryException
+	{
+
 		headerPageId = get_file_entry(filename);
-		if (headerPageId == null) {
+		if (headerPageId == null)
+		{
 			headerPage = new BitMapHeaderPage();
 			headerPageId = headerPage.getPageId();
 			add_file_entry(filename, headerPageId);
@@ -43,32 +45,25 @@ public class BitMapFile
 			headerPage.set_colNum(ColumnNo);
 			headerPage.set_rootId(new PageId(INVALID_PAGE));
 			headerPage.setType(NodeType.BTHEAD);
-		} else
+		}
+		else
+		{
 			headerPage = new BitMapHeaderPage(headerPageId);
-
-		dbname = filename;
-
-		/*
-		Page page = new Page();
-
-		// Sets the header key for the value type
-		if (value instanceof IntegerValueClass) {
-			headerPage.set_keyType((short) 0);
-		} else if (value instanceof StringValueClass) {
-			headerPage.set_keyType((short) 1);
 		}
 
-		// Initialize the first page
-		page.setpage(null);
-		BMPage bmPage = new BMPage(page);
-		bmPage.setNextPage(new PageId(INVALID_PAGE));
-		bmPage.setPrevPage(headerPageId);
 
-		headerPage.setNextPage(bmPage.getCurPage());
+		bmfilename = filename;
 
-		Scan scan = columnFile.openColumnScan(ColumnNo);
-		Tuple data = scan.getNext(scan.getUserRID());
-		 */
+
+		// Sets the header key for the value type
+		if (value instanceof IntegerValueClass)
+		{
+			headerPage.set_keyType((short) 0);
+		}
+		else if (value instanceof StringValueClass)
+		{
+			headerPage.set_keyType((short) 1);
+		}
 
 	}
 
@@ -114,7 +109,7 @@ public class BitMapFile
 				_destroyFile(pgId);
 			unpinPage(headerPageId);
 			freePage(headerPageId);
-			delete_file_entry(dbname);
+			delete_file_entry(bmfilename);
 			headerPage = null;
 		}
 	}
@@ -146,7 +141,7 @@ public class BitMapFile
 
 	public boolean Delete(int position) {
 		try {
-			int key = (int) headerPage.get_keyType();
+			int key = headerPage.get_keyType();
 
 			BMPage page = new BMPage();
 			PageId nextpageno = headerPage.getNextPage();
@@ -191,9 +186,22 @@ public class BitMapFile
 	public boolean Insert(int position)
 			throws IOException {
 		try {
-			int key = (int) headerPage.get_keyType();
+			int key = headerPage.get_keyType();
 
 			BMPage page = new BMPage();
+
+			//if no header page, need to create new one
+			if(headerPage.get_rootId().pid == INVALID_PAGE)
+			{
+				page = new BMPage(headerPage);
+				this.headerPageId = page.getCurPage();
+
+				page.setNextPage(new PageId(INVALID_PAGE));
+				page.setPrevPage(new PageId(INVALID_PAGE));
+
+
+			}
+
 			PageId nextpageno = headerPage.getNextPage();
 
 			while (nextpageno.pid != INVALID_PAGE) {

@@ -258,7 +258,7 @@ public class Columnarfile {
 
     public boolean createBitMapIndex(int columnNo, ValueClass value) {
         try {
-            //TODO
+            //TODO : need to have two constructors
             //System.out.println("ColNum: " + columnNo);
             //System.out.println("ValueClass: " + value);
             BitMapFile bitmapFile = new BitMapFile(this.name + columnNo, this, columnNo, value);

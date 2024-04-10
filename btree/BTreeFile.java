@@ -380,7 +380,7 @@ public class BTreeFile extends IndexFile
 	throw new KeyTooLongException(null,"");
       
       if ( key instanceof StringKey ) {
-	if ( headerPage.get_keyType() != AttrType.attrString ) {
+		if ( headerPage.get_keyType() != AttrType.attrString ) {
 	  throw new KeyNotMatchException(null,"");
 	}
       }
