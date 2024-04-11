@@ -272,28 +272,58 @@ public class Columnarfile {
                 bitmapFile = new BitMapFile(this.name + columnNo, this, columnNo, value);
             }
 
-
+            int position = 0;
             RID rid = new RID();
             Scan s = heapfiles[columnNo].openScan();
             Tuple tuple = s.getNext(rid);
 
-            int minValue = Integer.MAX_VALUE;
             int maxValue = Integer.MIN_VALUE;
+            int minValue = Integer.MAX_VALUE;
 
-            while(tuple != null) {
-                byte[] intArray = tuple.getTupleByteArray();
-                int intData = Convert.getIntValue(0, intArray);
-                if (intData < minValue) {
-                    minValue = intData;
+            while(tuple != null)
+            {
+                if(value instanceof IntegerValueClass)
+                {
+                    byte[] intByteArray = tuple.returnTupleByteArray();
+                    int intVal = Convert.getIntValue(0, intByteArray);
+                    if (intVal > maxValue) {
+                        maxValue = intVal;
+                    }
+                    if (intVal < minValue) {
+                        minValue = intVal;
+                    }
+                    if(intVal == ((IntegerValueClass) value).getValue())
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        position++;
+                    }
                 }
-                if (intData > maxValue) {
-                    maxValue = intData;
+                else if(value instanceof StringValueClass)
+                {
+                    byte[] strByteArray = tuple.returnTupleByteArray();
+                    String strVal = Convert.getStrValue(0, strByteArray, 25);
+
+                    if(strVal.equals(((StringValueClass) value).getValue()))
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        position++;
+                    }
                 }
                 tuple = s.getNext(rid);
             }
 
-            bitmapFile.byteArraySize = maxValue - minValue + 1;
+            int range = maxValue - minValue + 1;
+            System.out.println(range);
+            bitmapFile.byteArraySize = range;
 
+            System.out.println("Position of value: " + position);
+            bitmapFile.Insert(position);
 
             /*
             //RID rid = new RID();

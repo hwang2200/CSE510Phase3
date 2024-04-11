@@ -183,8 +183,6 @@ public class BMPage extends Page
     throws IOException
     {
         nextPage.pid = pageNo.pid;
-        //TODO
-        System.out.println("PID: " + nextPage.pid);
         Convert.setIntValue (nextPage.pid, NEXT_PAGE, data);
     }
 

@@ -218,7 +218,13 @@ public class BitMapFile
 					data = new byte[byteArraySize];
 					int byteIndex = position / 8;
 					int bitIndex = position % 8;
-					data[byteIndex] |= 1 << bitIndex;
+
+					//TODO
+					//System.out.println("Page doesn't exist");
+					//System.out.println("Byte index: " + byteIndex);
+					//System.out.println("Bit index: " + bitIndex);
+
+					data[byteIndex] |= (1 << bitIndex);
 				}
 				else
 				{
@@ -228,7 +234,7 @@ public class BitMapFile
 				}
 
 				//TODO
-				System.out.println("Data array (bitmap): " + Arrays.toString(data));
+				System.out.println(Arrays.toString(data));
 
 				if ((key == 0 && page.available_space() >= 2) || (key == 1 && page.available_space() >= 4)) {
 					// Page exists with space
@@ -251,7 +257,13 @@ public class BitMapFile
 					data = new byte[byteArraySize];
 					int byteIndex = position / 8;
 					int bitIndex = position % 8;
-					data[byteIndex] |= 1 << bitIndex;
+
+					//TODO
+					//System.out.println("Page does exist");
+					//System.out.println("Byte index: " + byteIndex);
+					//System.out.println("Bit index: " + bitIndex);
+
+					data[byteIndex] = 1;
 				}
 				else
 				{
@@ -260,7 +272,7 @@ public class BitMapFile
 
 				}
 				//TODO
-				System.out.println("Data array (bitmap): " + Arrays.toString(data));
+				System.out.println(Arrays.toString(data));
 
 				page.writeBMPageArray(data);
 			}
