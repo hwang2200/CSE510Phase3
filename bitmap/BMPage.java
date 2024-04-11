@@ -278,7 +278,8 @@ public class BMPage extends Page
      * @param byteWrite
      */
     public void writeBMPageArray(byte[] byteWrite)
-    throws IOException{
+        throws IOException
+    {
         int writeLen = byteWrite.length;
         int spaceNeeded = writeLen + SIZE_OF_SLOT;
 
@@ -287,50 +288,52 @@ public class BMPage extends Page
         // if we can find an empty one.
         
         freeSpace = Convert.getShortValue (FREE_SPACE, data);
-        if (spaceNeeded > freeSpace) {
-            return;
-        
-        } else {
-        
-        // look for an empty slot
-        slotCnt = Convert.getShortValue (SLOT_CNT, data); 
-        int i; 
-        short length;
-        for (i= 0; i < slotCnt; i++) 
+        if (spaceNeeded > freeSpace)
         {
-            length = getSlotLength(i); 
-            if (length == EMPTY_SLOT)
-                break;
-        }
-        
-        if(i == slotCnt)   //use a new slot
-        {           
-            // adjust free space        
-            freeSpace -= spaceNeeded;
-            Convert.setShortValue (freeSpace, FREE_SPACE, data);
-            
-            slotCnt++;
-            Convert.setShortValue (slotCnt, SLOT_CNT, data);
-            
-        }
-        else {
-        // reusing an existing slot
-        freeSpace -= writeLen;
-        Convert.setShortValue (freeSpace, FREE_SPACE, data);
-        }
-            
-        usedPtr = Convert.getShortValue (USED_PTR, data);
-            usedPtr -= writeLen;    // adjust usedPtr
-        Convert.setShortValue (usedPtr, USED_PTR, data);
-        
-        //insert the slot info onto the data page
-        setSlot(i, writeLen, usedPtr);   
-        
-        // insert data onto the data page
-        System.arraycopy (byteWrite, 0, data, usedPtr, writeLen);
-        curPage.pid = Convert.getIntValue (CUR_PAGE, data);
-        return;
-        }
 
         }
+        else
+        {
+        
+        // look for an empty slot
+            slotCnt = Convert.getShortValue (SLOT_CNT, data);
+            int i;
+            short length;
+            for (i= 0; i < slotCnt; i++)
+            {
+                length = getSlotLength(i);
+                if (length == EMPTY_SLOT)
+                    break;
+            }
+
+            if(i == slotCnt)   //use a new slot
+            {
+                // adjust free space
+                freeSpace -= spaceNeeded;
+                Convert.setShortValue (freeSpace, FREE_SPACE, data);
+
+                slotCnt++;
+                Convert.setShortValue (slotCnt, SLOT_CNT, data);
+
+            }
+            else
+            {
+            // reusing an existing slot
+                freeSpace -= writeLen;
+                Convert.setShortValue (freeSpace, FREE_SPACE, data);
+            }
+
+            usedPtr = Convert.getShortValue (USED_PTR, data);
+            usedPtr -= writeLen;    // adjust usedPtr
+            Convert.setShortValue (usedPtr, USED_PTR, data);
+
+            //insert the slot info onto the data page
+            setSlot(i, writeLen, usedPtr);
+
+            // insert data onto the data page
+            System.arraycopy (byteWrite, 0, data, usedPtr, writeLen);
+            curPage.pid = Convert.getIntValue (CUR_PAGE, data);
+        }
+
+    }
 }

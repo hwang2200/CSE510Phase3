@@ -19,6 +19,7 @@ import value.ValueClass;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -255,20 +256,21 @@ public class allPrograms {
                 System.out.println("Column not found for createBitMap function");
                 return;
             }
-            //System.out.println(cf.heapfiles[columnNum]);
+
+            //Loops through records in a heapfile
             RID rid = new RID();
             Scan s = cf.heapfiles[columnNum].openScan();
             Tuple tuple = s.getNext(rid);
 
-            //System.out.println(Arrays.toString(tuple.getTupleByteArray()));
-
             while(tuple != null) {
-                if (cf.type[columnNum].attrType == AttrType.attrInteger) {
+                if (cf.type[columnNum].attrType == AttrType.attrInteger)
+                {
                     int value = Convert.getIntValue(0, tuple.getTupleByteArray());
                     valueI.setValue(value);
                     cf.createBitMapIndex(columnNum, valueI);
-
-                } else if (cf.type[columnNum].attrType == AttrType.attrString) {
+                }
+                else if (cf.type[columnNum].attrType == AttrType.attrString)
+                {
                     String value = Convert.getStrValue(0, tuple.getTupleByteArray(), 25);
                     valueS.setValue(value);
                     cf.createBitMapIndex(columnNum, valueS);

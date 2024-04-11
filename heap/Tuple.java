@@ -168,7 +168,7 @@ public class Tuple implements GlobalConst{
    public byte [] getTupleByteArray() 
    {
        byte [] tuplecopy = new byte [tuple_length];
-       System.arraycopy(data, tuple_offset, tuplecopy, 0, tuple_length);
+       System.arraycopy(data, tuple_offset  , tuplecopy, 0, tuple_length);
        return tuplecopy;
    }
    

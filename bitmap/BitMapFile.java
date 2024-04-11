@@ -2,6 +2,8 @@ package bitmap;
 
 import btree.*;
 import java.io.*;
+import java.util.Arrays;
+
 import bufmgr.*;
 import com.sun.jdi.IntegerValue;
 import global.*;
@@ -18,6 +20,7 @@ public class BitMapFile
 	private BitMapHeaderPage headerPage;
 	private PageId headerPageId;
 	private String bmfilename;
+	public int byteArraySize;
 	private final static int MAGIC0=1989;
 
 	public BitMapFile(String filename)
@@ -193,45 +196,73 @@ public class BitMapFile
 			//if no header page, need to create new one
 			if(headerPage.get_rootId().pid == INVALID_PAGE)
 			{
+				//Create new page and page structure
 				page = new BMPage(headerPage);
 				this.headerPageId = page.getCurPage();
 
 				page.setNextPage(new PageId(INVALID_PAGE));
 				page.setPrevPage(new PageId(INVALID_PAGE));
 
+				PageId nextpageno = headerPage.getNextPage();
 
+				while (nextpageno.pid != INVALID_PAGE)
+				{
+					page.setCurPage(nextpageno);
+					nextpageno = page.getNextPage();
+				}
+
+				//Prepare data to add
+				byte[] data;
+
+				if (key == 0) {
+					data = new byte[byteArraySize];
+					int byteIndex = position / 8;
+					int bitIndex = position % 8;
+					data[byteIndex] |= 1 << bitIndex;
+				}
+				else
+				{
+					data = new byte[4];
+					// TODO: Modify headerpage so it stores information about how to insert using
+
+				}
+
+				//TODO
+				System.out.println("Data array (bitmap): " + Arrays.toString(data));
+
+				if ((key == 0 && page.available_space() >= 2) || (key == 1 && page.available_space() >= 4)) {
+					// Page exists with space
+					page.writeBMPageArray(data);
+				}
+				else
+				{
+					// Need to add a new page
+					BMPage newpage = new BMPage();
+					page.setNextPage(newpage.getCurPage());
+					newpage.setPrevPage(page.getCurPage());
+					newpage.writeBMPageArray(data);
+				}
 			}
+			//header page exists (simply insert the record)
+			else
+			{
+				byte[] data;
+				if (key == 0) {
+					data = new byte[byteArraySize];
+					int byteIndex = position / 8;
+					int bitIndex = position % 8;
+					data[byteIndex] |= 1 << bitIndex;
+				}
+				else
+				{
+					data = new byte[4];
+					// TODO: Modify headerpage so it stores information about how to insert using
 
-			PageId nextpageno = headerPage.getNextPage();
+				}
+				//TODO
+				System.out.println("Data array (bitmap): " + Arrays.toString(data));
 
-			while (nextpageno.pid != INVALID_PAGE) {
-				page.setCurPage(nextpageno);
-				nextpageno = page.getNextPage();
-			}
-
-			byte[] data;
-
-			if (key == 0) {
-				data = new byte[2];
-				int byteIndex = position / 8;
-				int bitIndex = position % 8;
-				data[byteIndex] |= 1 << bitIndex;
-			} else {
-				data = new byte[4];
-				// TODO: Modify headerpage so it stores information about how to insert using
-				
-			}
-
-			if ((key == 0 && page.available_space() >= 2) || (key == 1 && page.available_space() >= 4)) {
-				// Page exists with space
 				page.writeBMPageArray(data);
-
-			} else {
-				// Need to add a new page
-				BMPage newpage = new BMPage();
-				page.setNextPage(newpage.getCurPage());
-				newpage.setPrevPage(page.getCurPage());
-				newpage.writeBMPageArray(data);
 			}
 
 			return true;

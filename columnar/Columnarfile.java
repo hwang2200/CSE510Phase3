@@ -14,7 +14,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class Columnarfile {
     public String name;
@@ -258,10 +261,56 @@ public class Columnarfile {
 
     public boolean createBitMapIndex(int columnNo, ValueClass value) {
         try {
-            //TODO : need to have two constructors
-            //System.out.println("ColNum: " + columnNo);
-            //System.out.println("ValueClass: " + value);
-            BitMapFile bitmapFile = new BitMapFile(this.name + columnNo, this, columnNo, value);
+            BitMapFile bitmapFile;
+            String filename = this.name + columnNo;
+            if(Files.exists(Paths.get(filename)))
+            {
+                bitmapFile = new BitMapFile(filename);
+            }
+            else
+            {
+                bitmapFile = new BitMapFile(this.name + columnNo, this, columnNo, value);
+            }
+
+
+            RID rid = new RID();
+            Scan s = heapfiles[columnNo].openScan();
+            Tuple tuple = s.getNext(rid);
+
+            int minValue = Integer.MAX_VALUE;
+            int maxValue = Integer.MIN_VALUE;
+
+            while(tuple != null) {
+                byte[] intArray = tuple.getTupleByteArray();
+                int intData = Convert.getIntValue(0, intArray);
+                if (intData < minValue) {
+                    minValue = intData;
+                }
+                if (intData > maxValue) {
+                    maxValue = intData;
+                }
+                tuple = s.getNext(rid);
+            }
+
+            bitmapFile.byteArraySize = maxValue - minValue + 1;
+
+
+            /*
+            //RID rid = new RID();
+            //Scan s = heapfiles[columnNo].openScan();
+            //Tuple tuple = s.getNext(rid);
+
+            if(value instanceof IntegerValueClass)
+            {
+                //int intData = ((IntegerValueClass) value).getValue();
+                //find the position in the heapfile where intData is located (bitmap is the same layout as the heapfile, just with an added bit)
+
+            }
+            else if(value instanceof StringValueClass)
+            {
+
+            }
+             */
 
             return true;
         } catch (Exception e) {
