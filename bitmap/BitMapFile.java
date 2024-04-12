@@ -213,7 +213,7 @@ public class BitMapFile
 				//Prepare data to add
 				byte[] data;
 
-				if (key == 0) {
+				if (key == 0 || key == 1) {
 					data = new byte[bitmapRange];
 					//TODO
 					//System.out.println("Page doesn't exist");
@@ -249,7 +249,7 @@ public class BitMapFile
 			else
 			{
 				byte[] data;
-				if (key == 0) {
+				if (key == 0 || key == 1) {
 					data = new byte[bitmapRange];
 
 					//TODO

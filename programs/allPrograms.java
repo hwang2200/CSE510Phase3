@@ -19,9 +19,7 @@ import value.ValueClass;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Scanner;
+import java.util.*;
 
 public class allPrograms {
     public static void main(String[] args)
@@ -265,43 +263,62 @@ public class allPrograms {
             //Find range to create bitmap for each value
             int maxValue = Integer.MIN_VALUE;
             int minValue = Integer.MAX_VALUE;
-            ArrayList<Integer> valuesList = new ArrayList<>();
+            ArrayList<Integer> intValuesList = new ArrayList<>();
+            ArrayList<String> strValuesList = new ArrayList<>();
 
             //Add value to array
             while(tuple != null) {
                 if (cf.type[columnNum].attrType == AttrType.attrInteger)
                 {
                     int value = Convert.getIntValue(0, tuple.getTupleByteArray());
-                    valuesList.add(value);
+                    intValuesList.add(value);
                 }
                 else if (cf.type[columnNum].attrType == AttrType.attrString)
                 {
-
+                    String value = Convert.getStrValue(0, tuple.getTupleByteArray(), 25);
+                    strValuesList.add(value);
                 }
                 tuple = s.getNext(rid);
             }
 
-            Integer[] valuesArray = valuesList.toArray(new Integer[0]);
-            for (int val : valuesArray) {
+            //Int range
+            Integer[] intValArray = intValuesList.toArray(new Integer[0]);
+            for (int val : intValArray) {
                 minValue = Math.min(minValue, val);
                 maxValue = Math.max(maxValue, val);
             }
 
             int range = maxValue - minValue + 1;
-            cf.bitmapRange = range;
-            System.out.println("Range: " + range);
+            cf.intBitmapRange = range;
+            System.out.println("Int Range: " + range);
+
+            //Str range (number of distinct strings)
+            String[] strValArray = strValuesList.toArray(new String[0]);
+            Set<String> set = new HashSet<>(strValuesList);
+            List<String> distinctStr = new ArrayList<>(set);
+            Map<String, Integer> stringID = new HashMap<>();
+            for (int i = 0; i < distinctStr.size(); i++)
+            {
+                stringID.put(distinctStr.get(i), i);
+            }
+            cf.strBitmapRange = distinctStr.size();
+            cf.stringHashMap = stringID;
+            System.out.println("List without duplicates: " + distinctStr);
+            System.out.println("String bitmap range: " + cf.strBitmapRange);
+            System.out.println("Map of strings: " + stringID);
 
             //Loop through each value in the array and call createBitMapIndex on it
-            for(int i = 0; i < valuesArray.length; i++)
+            for(int i = 0; i < cf.heapfiles[columnNum].getRecCnt(); i++)
             {
                 if (cf.type[columnNum].attrType == AttrType.attrInteger)
                 {
-                    valueI.setValue(valuesArray[i]);
+                    valueI.setValue(intValArray[i]);
                     cf.createBitMapIndex(columnNum, valueI);
                 }
                 else if (cf.type[columnNum].attrType == AttrType.attrString)
                 {
-
+                    valueS.setValue(strValArray[i]);
+                    cf.createBitMapIndex(columnNum, valueS);
                 }
             }
 

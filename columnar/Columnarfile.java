@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
 
 public class Columnarfile {
@@ -30,7 +31,9 @@ public class Columnarfile {
     public int tupleLength;
     public String[] columnNames;
     public ColumnarFileMetadata columnarFileMetadata;
-    public int bitmapRange;
+    public int intBitmapRange;
+    public int strBitmapRange;
+    public Map<String, Integer> stringHashMap;
 
     public Columnarfile(String name, String[] colNames, int numColumns, AttrType[] type)
             throws IOException, HFDiskMgrException, HFException, HFBufMgrException, SpaceNotAvailableException, InvalidSlotNumberException, InvalidTupleSizeException {
@@ -273,11 +276,29 @@ public class Columnarfile {
 
             if(value instanceof IntegerValueClass)
             {
-                bitmapFile.Insert(((IntegerValueClass) value).getValue(), bitmapRange);
+                bitmapFile.Insert(((IntegerValueClass) value).getValue(), intBitmapRange);
             }
             else if(value instanceof StringValueClass)
             {
-                //bitmapFile.Insert(strVal, bitmapRange);
+                int position = 0;
+                RID rid = new RID();
+                Scan s = heapfiles[columnNo].openScan();
+                Tuple tuple = s.getNext(rid);
+
+                while(tuple != null)
+                {
+                    byte[] strByteArray = tuple.returnTupleByteArray();
+                    String strData = Convert.getStrValue(0, strByteArray, 25);
+                    //Find which string it is in the dictionary
+                    if(strData.equals(((StringValueClass) value).getValue()))
+                    {
+                        position = stringHashMap.get(strData);
+                        break;
+                    }
+                    tuple = s.getNext(rid);
+                }
+                //Not position, but the identifier associated with each string
+                bitmapFile.Insert(position, strBitmapRange);
             }
 
 
