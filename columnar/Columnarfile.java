@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -26,12 +27,10 @@ public class Columnarfile {
     public Heapfile[] heapfiles;
     public String[] heapFileNames;
     public Heapfile columnarFile;
-
     public int tupleLength;
-
     public String[] columnNames;
-
     public ColumnarFileMetadata columnarFileMetadata;
+    public int bitmapRange;
 
     public Columnarfile(String name, String[] colNames, int numColumns, AttrType[] type)
             throws IOException, HFDiskMgrException, HFException, HFBufMgrException, SpaceNotAvailableException, InvalidSlotNumberException, InvalidTupleSizeException {
@@ -272,75 +271,15 @@ public class Columnarfile {
                 bitmapFile = new BitMapFile(this.name + columnNo, this, columnNo, value);
             }
 
-            int position = 0;
-            RID rid = new RID();
-            Scan s = heapfiles[columnNo].openScan();
-            Tuple tuple = s.getNext(rid);
-
-            int maxValue = Integer.MIN_VALUE;
-            int minValue = Integer.MAX_VALUE;
-
-            while(tuple != null)
-            {
-                if(value instanceof IntegerValueClass)
-                {
-                    byte[] intByteArray = tuple.returnTupleByteArray();
-                    int intVal = Convert.getIntValue(0, intByteArray);
-                    if (intVal > maxValue) {
-                        maxValue = intVal;
-                    }
-                    if (intVal < minValue) {
-                        minValue = intVal;
-                    }
-                    if(intVal == ((IntegerValueClass) value).getValue())
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        position++;
-                    }
-                }
-                else if(value instanceof StringValueClass)
-                {
-                    byte[] strByteArray = tuple.returnTupleByteArray();
-                    String strVal = Convert.getStrValue(0, strByteArray, 25);
-
-                    if(strVal.equals(((StringValueClass) value).getValue()))
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        position++;
-                    }
-                }
-                tuple = s.getNext(rid);
-            }
-
-            int range = maxValue - minValue + 1;
-            System.out.println(range);
-            bitmapFile.byteArraySize = range;
-
-            System.out.println("Position of value: " + position);
-            bitmapFile.Insert(position);
-
-            /*
-            //RID rid = new RID();
-            //Scan s = heapfiles[columnNo].openScan();
-            //Tuple tuple = s.getNext(rid);
-
             if(value instanceof IntegerValueClass)
             {
-                //int intData = ((IntegerValueClass) value).getValue();
-                //find the position in the heapfile where intData is located (bitmap is the same layout as the heapfile, just with an added bit)
-
+                bitmapFile.Insert(((IntegerValueClass) value).getValue(), bitmapRange);
             }
             else if(value instanceof StringValueClass)
             {
-
+                //bitmapFile.Insert(strVal, bitmapRange);
             }
-             */
+
 
             return true;
         } catch (Exception e) {

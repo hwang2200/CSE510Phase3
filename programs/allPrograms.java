@@ -262,21 +262,49 @@ public class allPrograms {
             Scan s = cf.heapfiles[columnNum].openScan();
             Tuple tuple = s.getNext(rid);
 
+            //Find range to create bitmap for each value
+            int maxValue = Integer.MIN_VALUE;
+            int minValue = Integer.MAX_VALUE;
+            ArrayList<Integer> valuesList = new ArrayList<>();
+
+            //Add value to array
             while(tuple != null) {
                 if (cf.type[columnNum].attrType == AttrType.attrInteger)
                 {
                     int value = Convert.getIntValue(0, tuple.getTupleByteArray());
-                    valueI.setValue(value);
+                    valuesList.add(value);
+                }
+                else if (cf.type[columnNum].attrType == AttrType.attrString)
+                {
+
+                }
+                tuple = s.getNext(rid);
+            }
+
+            Integer[] valuesArray = valuesList.toArray(new Integer[0]);
+            for (int val : valuesArray) {
+                minValue = Math.min(minValue, val);
+                maxValue = Math.max(maxValue, val);
+            }
+
+            int range = maxValue - minValue + 1;
+            cf.bitmapRange = range;
+            System.out.println("Range: " + range);
+
+            //Loop through each value in the array and call createBitMapIndex on it
+            for(int i = 0; i < valuesArray.length; i++)
+            {
+                if (cf.type[columnNum].attrType == AttrType.attrInteger)
+                {
+                    valueI.setValue(valuesArray[i]);
                     cf.createBitMapIndex(columnNum, valueI);
                 }
                 else if (cf.type[columnNum].attrType == AttrType.attrString)
                 {
-                    String value = Convert.getStrValue(0, tuple.getTupleByteArray(), 25);
-                    valueS.setValue(value);
-                    cf.createBitMapIndex(columnNum, valueS);
+
                 }
-                tuple = s.getNext(rid);
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         }

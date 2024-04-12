@@ -20,7 +20,6 @@ public class BitMapFile
 	private BitMapHeaderPage headerPage;
 	private PageId headerPageId;
 	private String bmfilename;
-	public int byteArraySize;
 	private final static int MAGIC0=1989;
 
 	public BitMapFile(String filename)
@@ -186,7 +185,7 @@ public class BitMapFile
 		}
 	}
 
-	public boolean Insert(int position)
+	public boolean Insert(int position, int bitmapRange)
 			throws IOException {
 		try {
 			int key = headerPage.get_keyType();
@@ -215,16 +214,13 @@ public class BitMapFile
 				byte[] data;
 
 				if (key == 0) {
-					data = new byte[byteArraySize];
-					int byteIndex = position / 8;
-					int bitIndex = position % 8;
-
+					data = new byte[bitmapRange];
 					//TODO
 					//System.out.println("Page doesn't exist");
 					//System.out.println("Byte index: " + byteIndex);
 					//System.out.println("Bit index: " + bitIndex);
 
-					data[byteIndex] |= (1 << bitIndex);
+					data[position] = 1;
 				}
 				else
 				{
@@ -254,16 +250,14 @@ public class BitMapFile
 			{
 				byte[] data;
 				if (key == 0) {
-					data = new byte[byteArraySize];
-					int byteIndex = position / 8;
-					int bitIndex = position % 8;
+					data = new byte[bitmapRange];
 
 					//TODO
 					//System.out.println("Page does exist");
 					//System.out.println("Byte index: " + byteIndex);
 					//System.out.println("Bit index: " + bitIndex);
 
-					data[byteIndex] = 1;
+					data[position] = 1;
 				}
 				else
 				{
