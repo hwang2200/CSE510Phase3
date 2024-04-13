@@ -141,7 +141,7 @@ public class BitMapFile
 		}
 	}
 
-	public boolean Delete(int position) {
+	public boolean Delete(int position, int bitmapRange) {
 		try {
 			int key = headerPage.get_keyType();
 
@@ -155,11 +155,9 @@ public class BitMapFile
 
 			byte[] data;
 
-			if (key == 0) {
-				data = new byte[2];
-				int byteIndex = position / 8;
-				int bitIndex = position % 8;
-				data[byteIndex] |= 0 << bitIndex;
+			if (key == 0 || key == 1) {
+				data = new byte[bitmapRange];
+				data[position] = 0;
 			} else {
 				data = new byte[4];
 				// TODO: Modify headerpage so it stores information about how to insert using

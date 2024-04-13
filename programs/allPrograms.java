@@ -22,8 +22,7 @@ import java.io.FileReader;
 import java.util.*;
 
 public class allPrograms {
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) {
         Columnarfile columnarFile = null;
         Scanner scanner = new Scanner(System.in);
         String option = null;
@@ -39,8 +38,7 @@ public class allPrograms {
             System.out.print("Enter Option from above: ");
             option = scanner.nextLine();
 
-            switch(option)
-            {
+            switch (option) {
                 case "1":
                     //Scanner scan1 = new Scanner(System.in);
                     System.out.println("Welcome to batchinsert!");
@@ -92,9 +90,53 @@ public class allPrograms {
                     //scan2.close();
                     break;
                 case "3":
+                    System.out.println("Welcome to Query!");
 
+                    System.out.println("Please enter in the name of the Column DB: ");
+                    colDBName = scanner.nextLine();
+
+                    System.out.println("Please enter in the name of the Columnar File: ");
+                    columnarFileName = scanner.nextLine();
+
+                    System.out.println("Please enter in the Target Column Name (optional): ");
+                    columnName = scanner.nextLine();
+
+                    System.out.println("Please enter in the value constraints (ColumnName Operator Value): ");
+                    String valueConstraint = scanner.nextLine();
+
+                    System.out.println("Please enter in the number of buffers: ");
+                    String numBuf = scanner.nextLine();
+
+                    System.out.println("Please enter in the access type (\"FILESCAN\", \"COLUMNSCAN\", \"BTREE\", or \"BITMAP\": ");
+                    String accessType = scanner.nextLine();
+
+                    queryArgs = new String[]{colDBName, columnarFileName, columnName, valueConstraint, numBuf, accessType};
+                    Query(queryArgs);
+                    break;
                 case "4":
+                    System.out.println("Welcome to Delete Query!");
 
+                    System.out.println("Please enter in the name of the Column DB: ");
+                    colDBName = scanner.nextLine();
+
+                    System.out.println("Please enter in the name of the Columnar File: ");
+                    columnarFileName = scanner.nextLine();
+
+                    System.out.println("Please enter in the Target Column Name (optional): ");
+                    columnName = scanner.nextLine();
+
+                    System.out.println("Please enter in the value constraints (ColumnName Operator Value): ");
+                    valueConstraint = scanner.nextLine();
+
+                    System.out.println("Please enter in the number of buffers: ");
+                    numBuf = scanner.nextLine();
+
+                    System.out.println("Please enter in the access type (\"FILESCAN\", \"COLUMNSCAN\", \"BTREE\", or \"BITMAP\": ");
+                    accessType = scanner.nextLine();
+
+                    queryArgs = new String[]{colDBName, columnarFileName, columnName, valueConstraint, numBuf, accessType};
+                    deleteQuery(queryArgs);
+                    break;
                 case "5":
                     System.out.println("Quitting...");
                     break;
@@ -105,7 +147,7 @@ public class allPrograms {
         scanner.close();
     }
 
-    public static Columnarfile batchInsert(String[] args){
+    public static Columnarfile batchInsert(String[] args) {
         PCounter.initialize();
         Columnarfile cf = null;
 
@@ -146,7 +188,7 @@ public class allPrograms {
             cf = new Columnarfile(columnarfileName, columnNames, columnNames.length, columnTypes);
 
             //Read data from data file
-            byte[] dataFileArray = new byte[25+25+4+4];
+            byte[] dataFileArray = new byte[25 + 25 + 4 + 4];
             int offset = 0;
 
             String currLine = br.readLine();
@@ -177,7 +219,7 @@ public class allPrograms {
         return cf;
     }
 
-    public static void index(String[] args, Columnarfile cf){
+    public static void index(String[] args, Columnarfile cf) {
         PCounter.initialize();
         if (args.length != 4) { // checks length
             System.out.println("Usage: java Index COLUMNDBNAME COLUMNARFILENAME COLUMNAME INDEXTYPE");
@@ -191,13 +233,11 @@ public class allPrograms {
 
         try {
 
-            if(indexType.equals("BTREE")){
+            if (indexType.equals("BTREE")) {
                 createBTree(cf, columnarfileName, columnName);
-            }
-            else if(indexType.equals("BITMAP")){
+            } else if (indexType.equals("BITMAP")) {
                 createBitMap(cf, columnarfileName, columnName);
-            }
-            else{
+            } else {
                 System.out.println("Usage: INDEXTYPE = BTREE or BITMAP");
                 System.exit(1);
             }
@@ -212,7 +252,7 @@ public class allPrograms {
         }
     }
 
-    public static void createBTree(Columnarfile cf, String columnarfileName, String columnName){
+    public static void createBTree(Columnarfile cf, String columnarfileName, String columnName) {
         try {
             int columnNum = -1;
 
@@ -221,8 +261,7 @@ public class allPrograms {
                     columnNum = i;
                 }
             }
-            if(columnNum == -1)
-            {
+            if (columnNum == -1) {
                 System.out.println("Column not found for createBTree function");
                 return;
             }
@@ -234,7 +273,7 @@ public class allPrograms {
         }
     }
 
-    public static void createBitMap(Columnarfile cf, String columnarfileName, String columnName){
+    public static void createBitMap(Columnarfile cf, String columnarfileName, String columnName) {
         try {
             ColumnarFileMetadata columnarMetadata = cf.getColumnarFileMetadata();
             cf.columnNames = columnarMetadata.columnNames;
@@ -249,8 +288,7 @@ public class allPrograms {
                     columnNum = i;
                 }
             }
-            if(columnNum == -1)
-            {
+            if (columnNum == -1) {
                 System.out.println("Column not found for createBitMap function");
                 return;
             }
@@ -267,14 +305,11 @@ public class allPrograms {
             ArrayList<String> strValuesList = new ArrayList<>();
 
             //Add value to array
-            while(tuple != null) {
-                if (cf.type[columnNum].attrType == AttrType.attrInteger)
-                {
+            while (tuple != null) {
+                if (cf.type[columnNum].attrType == AttrType.attrInteger) {
                     int value = Convert.getIntValue(0, tuple.getTupleByteArray());
                     intValuesList.add(value);
-                }
-                else if (cf.type[columnNum].attrType == AttrType.attrString)
-                {
+                } else if (cf.type[columnNum].attrType == AttrType.attrString) {
                     String value = Convert.getStrValue(0, tuple.getTupleByteArray(), 25);
                     strValuesList.add(value);
                 }
@@ -297,26 +332,23 @@ public class allPrograms {
             Set<String> set = new HashSet<>(strValuesList);
             List<String> distinctStr = new ArrayList<>(set);
             Map<String, Integer> stringID = new HashMap<>();
-            for (int i = 0; i < distinctStr.size(); i++)
-            {
+            for (int i = 0; i < distinctStr.size(); i++) {
                 stringID.put(distinctStr.get(i), i);
             }
             cf.strBitmapRange = distinctStr.size();
             cf.stringHashMap = stringID;
+
+            //TODO - Delete
             System.out.println("List without duplicates: " + distinctStr);
             System.out.println("String bitmap range: " + cf.strBitmapRange);
             System.out.println("Map of strings: " + stringID);
 
             //Loop through each value in the array and call createBitMapIndex on it
-            for(int i = 0; i < cf.heapfiles[columnNum].getRecCnt(); i++)
-            {
-                if (cf.type[columnNum].attrType == AttrType.attrInteger)
-                {
+            for (int i = 0; i < cf.heapfiles[columnNum].getRecCnt(); i++) {
+                if (cf.type[columnNum].attrType == AttrType.attrInteger) {
                     valueI.setValue(intValArray[i]);
                     cf.createBitMapIndex(columnNum, valueI);
-                }
-                else if (cf.type[columnNum].attrType == AttrType.attrString)
-                {
+                } else if (cf.type[columnNum].attrType == AttrType.attrString) {
                     valueS.setValue(strValArray[i]);
                     cf.createBitMapIndex(columnNum, valueS);
                 }
@@ -324,6 +356,100 @@ public class allPrograms {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void Query(String[] args) {
+        PCounter.initialize();
+
+        try {
+            if (args.length != 6) {
+                System.out.println("Usage: java Query COLUMNDBNAME COLUMNARFILENAME [TARGETCOLUMNNAMES] VALUECONSTRAINT NUMBUF ACCESSTYPE");
+                System.exit(1);
+            }
+            String columnDBName = args[0];
+            String columnarFileName = args[1];
+            String targetColumns = args[2];
+            String valueConstraints = args[3];
+            int numBuf = Integer.parseInt(args[4]);
+            String accessType = args[5];
+
+            //Parse value constraint
+            String[] valueConstSplit = valueConstraints.split(" ");
+            String columnConst = valueConstSplit[0];
+            String opConst = valueConstSplit[1];
+            String valConst = valueConstSplit[2];
+
+            //For each, access DB accordingly and check the value constraint
+            if(accessType.equals("FILESCAN"))
+            {
+
+            }
+            else if(accessType.equals("COLUMNSCAN"))
+            {
+
+            }
+            else if(accessType.equals("BTREE"))
+            {
+
+            }
+            else if(accessType.equals("BITMAP"))
+            {
+
+            }
+            else
+            {
+                System.out.println("Invalid access type!");
+                System.exit(1);
+            }
+
+        } catch (NumberFormatException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void deleteQuery(String[] args) {
+        PCounter.initialize();
+
+        try {
+            if (args.length != 6) {
+                System.out.println("Usage: java deleteQuery COLUMNDBNAME COLUMNARFILENAME [TARGETCOLUMNNAMES] VALUECONSTRAINT NUMBUF ACCESSTYPE");
+                System.exit(1);
+            }
+            String columnDBName = args[0];
+            String columnarFileName = args[1];
+            String targetColumns = args[2];
+            String valueConstraints = args[3];
+            int numBuf = Integer.parseInt(args[4]);
+            String accessType = args[5];
+
+            //Parse value constraint
+
+
+            //For each, access DB accordingly and check the value constraint
+            if(accessType.equals("FILESCAN"))
+            {
+
+            }
+            else if(accessType.equals("COLUMNSCAN"))
+            {
+
+            }
+            else if(accessType.equals("BTREE"))
+            {
+
+            }
+            else if(accessType.equals("BITMAP"))
+            {
+
+            }
+            else
+            {
+                System.out.println("Invalid access type!");
+                System.exit(1);
+            }
+        } catch (NumberFormatException e) {
+            throw new RuntimeException(e);
         }
     }
 }
