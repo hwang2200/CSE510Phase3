@@ -1,9 +1,15 @@
 package heap;
 
-import java.io.*;
-import diskmgr.*;
-import bufmgr.*;
-import global.*;
+import diskmgr.Page;
+import global.GlobalConst;
+import global.PageId;
+import global.RID;
+import global.SystemDefs;
+
+import java.io.IOException;
+
+import static heap.Filetype.ORDINARY;
+import static heap.Filetype.TEMP;
 
 /**  This heapfile implementation is directory-based. We maintain a
  *  directory of info about the data pages (which are of type HFPage
@@ -40,10 +46,10 @@ interface  Filetype {
   
 } // end of Filetype
 
-public class Heapfile implements Filetype,  GlobalConst {
+public class Heapfile implements GlobalConst {
   
   
-  PageId      _firstDirPageId;   // page number of header page
+  public PageId      _firstDirPageId;   // page number of header page
   int         _ftype;
   private     boolean     _file_deleted;
   private     String 	 _fileName;

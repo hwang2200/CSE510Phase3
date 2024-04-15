@@ -126,12 +126,13 @@ public class FileScan extends  Iterator
 	   WrongPermat
     {     
       RID rid = new RID();;
-      
+        int count = 0;
       while(true) {
 	if((tuple1 =  scan.getNext(rid)) == null) {
+        System.out.println("Tuple count of scan: " + count);
 	  return null;
 	}
-	
+	count++;
 	tuple1.setHdr(in1_len, _in1, s_sizes);
 	if (PredEval.Eval(OutputFilter, tuple1, null, _in1, null) == true){
 	  Projection.Project(tuple1, _in1,  Jtuple, perm_mat, nOutFlds); 

@@ -1,31 +1,47 @@
 package programs;
 
-import btree.BTreeFile;
+import TID.TID;
+import bitmap.BMPage;
+import bitmap.BitMapFile;
+import btree.*;
+import bufmgr.PageNotReadException;
 import columnar.ColumnarFileMetadata;
 import columnar.Columnarfile;
-import diskmgr.ColumnDB;
-import diskmgr.PCounter;
-import global.AttrType;
-import global.Convert;
-import global.RID;
-import global.SystemDefs;
-import heap.Heapfile;
-import heap.Scan;
-import heap.Tuple;
+import index.ColumnarIndexScan;
+import diskmgr.*;
+import global.*;
+import heap.*;
+import iterator.*;
 import org.w3c.dom.Attr;
 import value.IntegerValueClass;
 import value.StringValueClass;
 import value.ValueClass;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
+import index.IndexException;
+import index.UnknownIndexTypeException;
 import java.util.*;
 
+import static global.GlobalConst.INVALID_PAGE;
+
 public class allPrograms {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnknownKeyTypeException, InvalidTupleSizeException, InvalidTypeException {
         Columnarfile columnarFile = null;
         Scanner scanner = new Scanner(System.in);
         String option = null;
+        String dataFileName;
+        String colDBName;
+        String columnarFileName;
+        String numColumns;
+        String columnName;
+        String indexType;
+        String[] queryArgs;
+        String valueConstraint;
+        String numBuf;
+        String accessType;
 
         do {
 
@@ -38,6 +54,7 @@ public class allPrograms {
             System.out.print("Enter Option from above: ");
             option = scanner.nextLine();
 
+
             switch (option) {
                 case "1":
                     //Scanner scan1 = new Scanner(System.in);
@@ -45,18 +62,18 @@ public class allPrograms {
                     //System.out.println("Please enter in a query in the format: DATAFILENAME COLUMNDBNAME COLUMNARFILENAME NUMCOLUMNS");
 
                     System.out.println("Please enter in the name of the Data File: ");
-                    String dataFileName = scanner.nextLine();
+                    dataFileName = scanner.nextLine();
 
                     System.out.println("Please enter in the name of the Column DB: ");
-                    String colDBName = scanner.nextLine();
+                    colDBName = scanner.nextLine();
 
                     System.out.println("Please enter in the name of the Columnar File: ");
-                    String columnarFileName = scanner.nextLine();
+                    columnarFileName = scanner.nextLine();
 
                     System.out.println("Please enter in the number of columns: ");
-                    String numColumns = scanner.nextLine();
+                    numColumns = scanner.nextLine();
 
-                    String[] queryArgs = {dataFileName, colDBName, columnarFileName, numColumns};
+                    queryArgs = new String[]{dataFileName, colDBName, columnarFileName, numColumns};
 
                     columnarFile = batchInsert(queryArgs);
                     //System.out.println(columnarFile.toString());
@@ -79,16 +96,17 @@ public class allPrograms {
                     columnarFileName = scanner.nextLine();
 
                     System.out.println("Please enter in the Target Column Name: ");
-                    String columnName = scanner.nextLine();
+                    columnName = scanner.nextLine();
 
                     System.out.println("Please enter in the Index Type (\"BTREE\", or \"BITMAP\"): ");
-                    String indexType = scanner.nextLine();
+                    indexType = scanner.nextLine();
 
                     queryArgs = new String[]{colDBName, columnarFileName, columnName, indexType};
                     index(queryArgs, columnarFile);
 
                     //scan2.close();
                     break;
+
                 case "3":
                     System.out.println("Welcome to Query!");
 
@@ -98,20 +116,20 @@ public class allPrograms {
                     System.out.println("Please enter in the name of the Columnar File: ");
                     columnarFileName = scanner.nextLine();
 
-                    System.out.println("Please enter in the Target Column Name (optional): ");
+                    System.out.println("Please enter in the Target Column Name(s) separated by ',': ");
                     columnName = scanner.nextLine();
 
                     System.out.println("Please enter in the value constraints (ColumnName Operator Value): ");
-                    String valueConstraint = scanner.nextLine();
+                    valueConstraint = scanner.nextLine();
 
                     System.out.println("Please enter in the number of buffers: ");
-                    String numBuf = scanner.nextLine();
+                    numBuf = scanner.nextLine();
 
                     System.out.println("Please enter in the access type (\"FILESCAN\", \"COLUMNSCAN\", \"BTREE\", or \"BITMAP\": ");
-                    String accessType = scanner.nextLine();
+                    accessType = scanner.nextLine();
 
                     queryArgs = new String[]{colDBName, columnarFileName, columnName, valueConstraint, numBuf, accessType};
-                    Query(queryArgs);
+                    Query(queryArgs, columnarFile);
                     break;
                 case "4":
                     System.out.println("Welcome to Delete Query!");
@@ -159,7 +177,7 @@ public class allPrograms {
             }
             String datafileName = args[0] + ".txt";
             String columnDBName = args[1] + "DB";
-            String columnarfileName = args[2] + "COL";
+            String columnarfileName = args[2];
             int numColumns = Integer.parseInt(args[3]);
 
             SystemDefs sysDefs = new SystemDefs(columnDBName, 100000, 100, "Clock");
@@ -359,7 +377,7 @@ public class allPrograms {
         }
     }
 
-    public static void Query(String[] args) {
+    public static void Query(String[] args, Columnarfile cf) throws UnknownKeyTypeException, InvalidTupleSizeException, InvalidTypeException {
         PCounter.initialize();
 
         try {
@@ -370,40 +388,38 @@ public class allPrograms {
             String columnDBName = args[0];
             String columnarFileName = args[1];
             String targetColumns = args[2];
+            String[] targetColNames = targetColumns.split(",");
             String valueConstraints = args[3];
             int numBuf = Integer.parseInt(args[4]);
             String accessType = args[5];
 
-            //Parse value constraint
-            String[] valueConstSplit = valueConstraints.split(" ");
-            String columnConst = valueConstSplit[0];
-            String opConst = valueConstSplit[1];
-            String valConst = valueConstSplit[2];
 
             //For each, access DB accordingly and check the value constraint
-            if(accessType.equals("FILESCAN"))
-            {
-
-            }
-            else if(accessType.equals("COLUMNSCAN"))
-            {
-
-            }
-            else if(accessType.equals("BTREE"))
-            {
-
-            }
-            else if(accessType.equals("BITMAP"))
-            {
-
-            }
-            else
-            {
-                System.out.println("Invalid access type!");
-                System.exit(1);
+            switch (accessType.toUpperCase()) {
+                case "FILESCAN":
+                    System.out.println("ValueConstraints passing in: " + valueConstraints);
+                    performFileScan(columnarFileName, targetColNames, valueConstraints, cf);
+                    break;
+                case "COLUMNSCAN":
+                    performColumnScan(columnarFileName, targetColNames, valueConstraints);
+                    break;
+                case "BTREE":
+                    performBTreeScan(columnarFileName, targetColNames, valueConstraints);
+                    break;
+                case "BITMAP":
+                    performBitmapScan(columnarFileName, targetColNames, valueConstraints);
+                    break;
+                default:
+                    System.err.println("Invalid access type");
+                    break;
             }
 
-        } catch (NumberFormatException e) {
+            System.out.println("Number of disk pages read: " + PCounter.getReadCount());
+            System.out.println("Number of disk pages written: " + PCounter.getWriteCount());
+
+        } catch (NumberFormatException | IOException | IndexException | UnknownIndexTypeException |
+                 PageNotReadException | UnknowAttrType | FieldNumberOutOfBoundException | PredEvalException |
+                 WrongPermat | InvalidRelation | FileScanException | TupleUtilsException e) {
             throw new RuntimeException(e);
         }
     }
@@ -450,6 +466,320 @@ public class allPrograms {
             }
         } catch (NumberFormatException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+
+    private static void performFileScan(String columnarFileName, String[] targetColumnNames, String valueConstraint, Columnarfile cf) {
+        try {
+            short[] sSizes = new short[]{25,25};
+            String[] columns = cf.columnNames;
+
+            //String[] columnNames = new String[targetColumnNames.length];
+            AttrType[] attrTypes = cf.type;
+
+            FldSpec[] projList = new FldSpec[targetColumnNames.length];
+            for (int i = 0; i < targetColumnNames.length; i++) {
+                projList[i] = new FldSpec(new RelSpec(RelSpec.outer), i + 1);
+            }
+
+            //obtains value constraints and ops
+            CondExpr[] valueConstraintExpr = new CondExpr[1];
+            valueConstraintExpr[0] = new CondExpr();
+            String[] values = valueConstraint.split(" ");
+            System.out.println("ValueConstraints passing in: " + Arrays.toString(values));
+            String columnName = values[0];
+            int columnNum = 0;
+            String operator = values[1];
+            String value = values[2];
+
+            if(Objects.equals(operator, "<"))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopLT);
+            }
+            else if(Objects.equals(operator, ">"))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopGT);
+            }
+            else if(Objects.equals(operator, "="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopEQ);
+            }
+            else if(Objects.equals(operator, "!="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopNE);
+            }
+            else if(Objects.equals(operator, "<="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopLE);
+            }
+            else if(Objects.equals(operator, ">="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopGE);
+            }
+
+            if(Objects.equals(columnName, "A"))
+            {
+                columnNum = 0;
+            }
+            else if(Objects.equals(columnName, "B"))
+            {
+                columnNum = 1;
+            }
+            else if(Objects.equals(columnName, "C")) {
+                columnNum = 2;
+            }
+            else if(Objects.equals(columnName, "D"))
+            {
+                columnNum = 3;
+            }
+
+            valueConstraintExpr[0].type1 = new AttrType(AttrType.attrString);
+            valueConstraintExpr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), columnNum);
+            valueConstraintExpr[0].operand1.string = columnName;
+
+            if(value.matches("^\\d+$"))
+            {
+                valueConstraintExpr[0].type2 = new AttrType(AttrType.attrInteger);
+                valueConstraintExpr[0].operand2.integer = Integer.parseInt(value);
+            }
+            else
+            {
+                valueConstraintExpr[0].type2 = new AttrType(AttrType.attrString);
+                valueConstraintExpr[0].operand2.string = value;
+            }
+
+
+            String fileName = columnarFileName + ".columnid" + columnNum;
+            System.out.println("FileName: " + fileName);
+            FileScan fileScan = new FileScan(
+                    fileName,
+                    attrTypes,
+                    sSizes,
+                    (short) attrTypes.length,
+                    targetColumnNames.length,
+                    projList,
+                    valueConstraintExpr
+            );
+
+            // Get tuples one by one
+            Tuple tuple = new Tuple();
+            while ((tuple = fileScan.get_next()) != null) {
+                // Process the tuple here
+                System.out.println(Arrays.toString(tuple.getTupleByteArray()));
+            }
+
+            // Close the file scan
+            fileScan.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void performColumnScan(String columnarFileName, String[] targetColumnNames, String valueConstraint) throws InvalidTupleSizeException, IOException, InvalidTypeException, UnknownKeyTypeException, IndexException, UnknownIndexTypeException, PageNotReadException, UnknowAttrType, FieldNumberOutOfBoundException, PredEvalException, WrongPermat, InvalidRelation, FileScanException, TupleUtilsException {
+        // Initialize FldSpec[] for the output fields
+        FldSpec[] outFlds = new FldSpec[targetColumnNames.length];
+        for (int i = 0; i < targetColumnNames.length; i++) {
+            outFlds[i] = new FldSpec(new RelSpec(RelSpec.outer), i + 1);
+        }
+
+        // Get the attribute types and sizes from the catalog or wherever it's stored
+        AttrType[] attrTypes = new AttrType[targetColumnNames.length];
+        short[] strSizes = new short[targetColumnNames.length];
+
+        // Assuming you have a method to retrieve attribute types and sizes for the specified column names
+        // You need to implement this method based on your catalog or metadata management
+        if (columnarFileName != null) {
+            BufferedReader br = null;
+            try {
+                br = new BufferedReader(new FileReader(columnarFileName));
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            String[] columns = new String[0];
+            try {
+                columns = br.readLine().split(" ");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            String[] columnNames = new String[targetColumnNames.length];
+            AttrType[] columnTypes = new AttrType[targetColumnNames.length];
+
+            for (int i = 0; i < columns.length; i++) {
+                String[] columnDetails = columns[i].split(":");
+                columnNames[i] = columnDetails[0];
+
+                if (columnDetails[1].equals("int")) {
+                    columnTypes[i] = new AttrType(AttrType.attrInteger);
+                } else {
+                    columnTypes[i] = new AttrType(AttrType.attrInteger);
+                }
+            }
+
+            // Set up other parameters
+            int noInFlds = attrTypes.length;
+            int noOutFlds = outFlds.length;
+            int[] fldNums = new int[targetColumnNames.length];
+            for (int i = 0; i < targetColumnNames.length; i++) {
+                fldNums[i] = i + 1;
+            }
+
+            CondExpr[] valueConstraintExpr = new CondExpr[1];
+            String[] values = valueConstraint.split(" ");
+            String columnName = values[0];
+            int columnNum = 0;
+            String operator = values[1];
+            String value = values[2];
+
+            if(Objects.equals(operator, "<"))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopLT);
+            }
+            else if(Objects.equals(operator, ">"))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopGT);
+            }
+            else if(Objects.equals(operator, "="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopEQ);
+            }
+            else if(Objects.equals(operator, "!="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopNE);
+            }
+            else if(Objects.equals(operator, "<="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopLE);
+            }
+            else if(Objects.equals(operator, ">="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopGE);
+            }
+
+            if(Objects.equals(columnName, "A"))
+            {
+                columnNum = 0;
+            }
+            else if(Objects.equals(columnName, "B"))
+            {
+                columnNum = 1;
+            }
+            else if(Objects.equals(columnName, "C")) {
+                columnNum = 2;
+            }
+            else if(Objects.equals(columnName, "D"))
+            {
+                columnNum = 3;
+            }
+
+            valueConstraintExpr[0].type1 = new AttrType(AttrType.attrSymbol);
+            valueConstraintExpr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), columnNum);
+
+            if(value.matches("^\\d+$"))
+            {
+                valueConstraintExpr[0].type2 = new AttrType(AttrType.attrInteger);
+                valueConstraintExpr[0].operand2.integer = Integer.parseInt(value);
+            }
+            else
+            {
+                valueConstraintExpr[0].type2 = new AttrType(AttrType.attrInteger);
+                valueConstraintExpr[0].operand2.string = value;
+            }
+
+            //String heapName = this.name + ".columnid" + i;
+            ColumnarFileScan columnarFileScan = new ColumnarFileScan(
+                    columnarFileName,
+                    attrTypes,
+                    strSizes,
+                    (short) noInFlds,
+                    noOutFlds,
+                    outFlds,
+                    valueConstraintExpr
+            );
+
+            // Perform column scan
+            Tuple tuple;
+            while ((tuple = columnarFileScan.get_next()) != null) {
+                System.out.println(tuple);
+            }
+
+            columnarFileScan.close();
+        }
+    }
+
+    private static void performBTreeScan(String columnarFileName, String[] targetColumnNames, String valueConstraint) {
+        try {
+            BTreeFile btreeFile = new BTreeFile(columnarFileName);
+            BTFileScan btreeScan = btreeFile.new_scan(null, null);
+
+            // Iterate over the B-tree index entries
+            KeyDataEntry entry;
+            while ((entry = btreeScan.get_next()) != null) {
+                IntegerKey key = (IntegerKey) entry.key;
+                RID rid = ((LeafData) entry.data).getData();
+
+                System.out.println("Key: " + key.getKey() + ", RID: " + rid.toString());
+            }
+
+            // Close the B-tree scan
+            btreeScan.DestroyBTreeFileScan();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void performBitmapScan(String columnarFileName, String[] targetColumnNames, String valueConstraint) {
+        try {
+            String[] columnNames = new String[targetColumnNames.length];
+            AttrType[] columnTypes = new AttrType[targetColumnNames.length];
+
+            for (int i = 0; i < targetColumnNames.length; i++) {
+                String[] columnDetails = targetColumnNames[i].split(":");
+                columnNames[i] = columnDetails[0];
+
+                if (columnDetails[1].equals("int")) {
+                    columnTypes[i] = new AttrType(AttrType.attrInteger);
+                } else {
+                    columnTypes[i] = new AttrType(AttrType.attrString);
+                }
+            }
+            Columnarfile columnarFile = new Columnarfile(columnarFileName, targetColumnNames, targetColumnNames.length, columnTypes);
+
+            // Open the bitmap file for the specified column
+            BitMapFile bitmapFile = new BitMapFile(columnarFileName);
+
+            BMPage page = new BMPage();
+            PageId nextPageId = bitmapFile.getHeaderPage().getNextPage();
+            while (nextPageId.pid != INVALID_PAGE) {
+                page.setCurPage(nextPageId);
+
+                // Read the bitmap data directly from the page
+                byte[] bmPageData = page.getpage();
+
+                // Iterate over each bit in the bitmap page
+                for (int i = 0; i < bmPageData.length * 8; i++) {
+                    if ((bmPageData[i / 8] & (1 << (i % 8))) != 0) { // Check if the bit is set
+                        // Create a TID from the RID
+                        TID tid = new TID(targetColumnNames.length);
+                        tid.numRIDs = targetColumnNames.length;
+                        tid.recordIDs = new RID[targetColumnNames.length];
+                        for (int j = 0; j < targetColumnNames.length; j++) {
+                            RID rid = new RID(new PageId(page.getCurPage().pid), i);
+                            tid.recordIDs[j] = rid;
+                        }
+                        // Retrieve the tuple using the TID
+                        Tuple tuple = columnarFile.getTuple(tid);
+                        System.out.println(tuple);
+                    }
+                }
+
+                nextPageId = page.getNextPage();
+            }
+
+            bitmapFile.close(); // Close the bitmap file after scanning
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

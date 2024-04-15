@@ -1,19 +1,14 @@
 package columnar;
 
-import global.AttrType;
-import global.Convert;
-import global.PageId;
-import global.RID;
+import diskmgr.*;
+import global.*;
 import heap.*;
 import TID.*;
 import bitmap.BitMapFile;
 import value.*;
 import btree.*;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -23,6 +18,7 @@ import java.util.Objects;
 
 public class Columnarfile {
     public String name;
+    public String fileName;
     public static int numColumns;
     public AttrType[] type;
     public Heapfile[] heapfiles;
@@ -33,6 +29,7 @@ public class Columnarfile {
     public ColumnarFileMetadata columnarFileMetadata;
     public int intBitmapRange;
     public int strBitmapRange;
+
     public Map<String, Integer> stringHashMap;
 
     public Columnarfile(String name, String[] colNames, int numColumns, AttrType[] type)
@@ -46,9 +43,10 @@ public class Columnarfile {
 
         // Create a heapfile for each column
         for (int i = 0; i < numColumns; i++) {
-            String heapName = this.name + ".columnid" + i;
+            String heapName = this.name + "COL.columnid" + i;
             heapfiles[i] = new Heapfile(heapName);
             heapFileNames[i] = heapName;
+            System.out.println("HeapFile[" + i + "] name: " + heapName);
         }
 
         // Initialize the metadata file
@@ -56,7 +54,7 @@ public class Columnarfile {
         columnarFile = new Heapfile(this.name + ".hdr");
         columnarFileMetadata.columnarFileName = name;
         setColumnarFileMetadata();
-
+        fileName = name + "COL";
     }
 
     // Deletes all the column files and the metadata file associated with this
