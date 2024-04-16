@@ -10,6 +10,7 @@ import TID.*;
 import org.w3c.dom.Attr;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public class TupleScan
 {
@@ -41,28 +42,42 @@ public class TupleScan
         }
     }
 
-    public Tuple getNext(TID tid) throws InvalidTupleSizeException, IOException, FieldNumberOutOfBoundException {
-        Tuple nextTID = new Tuple();
+    public Tuple getNext(TID tid) throws InvalidTupleSizeException, IOException, FieldNumberOutOfBoundException, InvalidTypeException {
+        Tuple nextTID = new Tuple(_cf.tupleLength);
+        nextTID.setTuple_length(_cf.tupleLength);
+        nextTID.setFldCnt((short)_cf.columnNames.length);
+        nextTID.setFldsOffset(_cf.tupleOffSets);
+
+
 
         //For each scan object (one scan object for each heapfile)
+        int i = 0;
         for(Scan s : scan)
         {
             //For all columns (since each column contains one heapfile, we get the next records in each heapfile)
-            for(int i = 0; i < _cf.heapfiles.length; i++)
-            {
                 //Tuple storing data related to recordID
                 Tuple tuple = s.getNext(tid.recordIDs[i]);
-
+                if(tuple == null) { return null; }
+                //System.out.println("tuple b:" + tuple);
                 //For each record id in that tid, check its type (associated with type array in cf) and set it in the tuple we are returning
                 if(_cf.type[i].attrType == AttrType.attrInteger)
                 {
-                    nextTID.setIntFld(i, tuple.getIntFld(i));
+                    tuple.setTuple_length((short)4);
+                    tuple.setFldCnt((short)1);
+                    //System.out.println(Arrays.toString(_cf.tupleOffSets));
+                    tuple.setFldsOffset(_cf.tupleOffSets);
+                    //System.out.println(Arrays.toString(tuple.copyFldOffset()));
+                    nextTID.setIntFld(i+1, tuple.getIntFld(1));
                 }
                 if(_cf.type[i].attrType == AttrType.attrString)
                 {
-                    nextTID.setStrFld(i, tuple.getStrFld(i));
-                }
+                    tuple.setTuple_length((short)25);
+                    tuple.setFldCnt((short)1);
+                    tuple.setFldsOffset(_cf.tupleOffSets);
+                    nextTID.setStrFld(i+1, tuple.getStrFld(1));
+
             }
+                i++;
         }
         return nextTID;
     }

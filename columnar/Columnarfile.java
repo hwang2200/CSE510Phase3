@@ -25,6 +25,7 @@ public class Columnarfile {
     public String[] heapFileNames;
     public Heapfile columnarFile;
     public int tupleLength;
+    public short[] tupleOffSets;
     public String[] columnNames;
     public ColumnarFileMetadata columnarFileMetadata;
     public int intBitmapRange;
@@ -86,7 +87,6 @@ public class Columnarfile {
                 Convert.setIntValue(dataInt, 0, newData);
                 offset = offset + 4;
 
-                //tid.recordIDs[i] = new RID();
                 tid.recordIDs[i] = heapfiles[i].insertRecord(newData);
             }
             if (type[i].attrType == AttrType.attrString) {
@@ -233,7 +233,7 @@ public class Columnarfile {
         {
             btreeFile.insert(key, rid);
 
-            System.out.println("Tuple created! RID: " + rid);
+            //System.out.println("Tuple created! RID: " + rid);
             tuple = s.getNext(rid);
         }
 
@@ -244,7 +244,7 @@ public class Columnarfile {
                 KeyDataEntry tmpKDE = btscan.get_next();
                 while (tmpKDE != null) {
                     LeafData tmpData = (LeafData) tmpKDE.data;
-                    System.out.println("LeafData: " + tmpData);
+                    //System.out.println("LeafData: " + tmpData);
                     //RID tmpRid = tmpData.getData();
                     //System.out.println("RID: " + tmpRid);
                     tmpKDE = btscan.get_next();

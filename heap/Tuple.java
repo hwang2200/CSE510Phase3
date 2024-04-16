@@ -4,6 +4,8 @@ package heap;
 
 import java.io.*;
 import java.lang.*;
+import java.util.Arrays;
+
 import global.*;
 
 
@@ -242,8 +244,10 @@ public class Tuple implements GlobalConst{
    	throws IOException, FieldNumberOutOfBoundException 
    { 
          String val;
+         //System.out.println("fldNo: " + fldNo + " , fldCnt: " + fldCnt);
     if ( (fldNo > 0) && (fldNo <= fldCnt))      
      {
+         System.out.println("FldNo: " + fldNo + " : " +Arrays.toString(fldOffset));
         val = Convert.getStrValue(fldOffset[fldNo -1], data, 
 		fldOffset[fldNo] - fldOffset[fldNo -1]); //strlen+2
         return val;
@@ -534,5 +538,33 @@ public void setHdr (short numFlds,  AttrType types[], short strSizes[])
    {
       return 0;
    }
+
+
+    public void setTuple_length(int tuple_length) {
+        this.tuple_length = tuple_length;
+    }
+
+    public void setFldCnt(short fldCnt)
+    {
+        this.fldCnt = fldCnt;
+    }
+
+    public void setFldsOffset(short[] fldsOffset)
+    {
+        this.fldOffset = fldsOffset;
+    }
+
+    public void initHeaders() throws IOException {
+        int pos = tuple_offset;
+        fldCnt = Convert.getShortValue(pos, data);
+
+        fldOffset = new short[fldCnt+1];
+        pos+=2;
+        for(int i = 0;i<=fldCnt; i++)
+        {
+            fldOffset[i] = Convert.getShortValue(pos, data);
+            pos+=2;
+        }
+    }
 }
 

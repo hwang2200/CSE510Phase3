@@ -7,6 +7,7 @@ import btree.*;
 import bufmgr.PageNotReadException;
 import columnar.ColumnarFileMetadata;
 import columnar.Columnarfile;
+import columnar.TupleScan;
 import index.ColumnarIndexScan;
 import diskmgr.*;
 import global.*;
@@ -190,7 +191,8 @@ public class allPrograms {
 
             String[] columnNames = new String[columns.length];
             AttrType[] columnTypes = new AttrType[columns.length];
-
+            short[] offSets = new short[columns.length];
+            int byteLength = 0;
             for (int i = 0; i < columns.length; i++) {
 
                 String[] columnDetails = columns[i].split(":");
@@ -198,15 +200,30 @@ public class allPrograms {
 
                 if (columnDetails[1].contains("int")) {
                     columnTypes[i] = new AttrType(AttrType.attrInteger);
+                    byteLength += 4;
+                    offSets[i] = 4;
                 } else {
                     columnTypes[i] = new AttrType(AttrType.attrString);
+                    byteLength += 25;
+                    offSets[i] = 25;
                 }
             }
 
+            short[] tmpOffsets = new short[offSets.length];
+            tmpOffsets[0] = 0;
+            for(int i = 1; i < offSets.length; i++)
+            {
+                tmpOffsets[i] = (short) (offSets[i - 1] + tmpOffsets[i - 1]);
+            }
+
+            offSets = tmpOffsets;
+
             cf = new Columnarfile(columnarfileName, columnNames, columnNames.length, columnTypes);
+            cf.tupleLength = byteLength;
+            cf.tupleOffSets = offSets;
 
             //Read data from data file
-            byte[] dataFileArray = new byte[25 + 25 + 4 + 4];
+            byte[] dataFileArray = new byte[byteLength];
             int offset = 0;
 
             String currLine = br.readLine();
@@ -224,6 +241,7 @@ public class allPrograms {
                 }
                 cf.insertTuple(dataFileArray);
                 offset = 0;
+                Arrays.fill(dataFileArray, (byte)0);
                 currLine = br.readLine();
             }
             br.close();
@@ -231,6 +249,29 @@ public class allPrograms {
             // Print out the number of disk pages read and written
             System.out.println("Number of disk pages read: " + PCounter.getReadCount());
             System.out.println("Number of disk pages written: " + PCounter.getWriteCount());
+
+            TupleScan tscan = new TupleScan(cf);
+
+            TID tid = new TID(cf.heapfiles[0].getRecCnt());
+            tid.recordIDs = new RID[numColumns];
+
+            Tuple tuple = new Tuple();
+            tuple.setHdr((short) numColumns, cf.type, new short[]{25,25});
+            //System.out.println("tuple a:" + tuple);
+            for(int i = 0; i < numColumns; i++)
+            {
+                tid.recordIDs[i] = new RID();
+            }
+
+            while((tuple = tscan.getNext(tid)) != null)
+            {
+                System.out.println("Record Fetched:");
+                tuple.print(columnTypes);
+            }
+
+            tscan.closetuplescan();
+
+
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -477,11 +518,15 @@ public class allPrograms {
 
             //String[] columnNames = new String[targetColumnNames.length];
             AttrType[] attrTypes = cf.type;
+            AttrType[] type = new AttrType[1];
 
-            FldSpec[] projList = new FldSpec[targetColumnNames.length];
-            for (int i = 0; i < targetColumnNames.length; i++) {
-                projList[i] = new FldSpec(new RelSpec(RelSpec.outer), i + 1);
-            }
+            //FldSpec[] projList = new FldSpec[targetColumnNames.length];
+            //for (int i = 0; i < targetColumnNames.length; i++) {
+            //    projList[i] = new FldSpec(new RelSpec(RelSpec.outer), i + 1);
+            //}
+            FldSpec[] projList = new FldSpec[1];
+            RelSpec rel = new RelSpec(RelSpec.outer);
+            projList[0] = new FldSpec(rel, 1);
 
             //obtains value constraints and ops
             CondExpr[] valueConstraintExpr = new CondExpr[1];
@@ -521,17 +566,21 @@ public class allPrograms {
             if(Objects.equals(columnName, "A"))
             {
                 columnNum = 0;
+                type[0] = attrTypes[0];
             }
             else if(Objects.equals(columnName, "B"))
             {
                 columnNum = 1;
+                type[0] = attrTypes[1];
             }
             else if(Objects.equals(columnName, "C")) {
                 columnNum = 2;
+                type[0] = attrTypes[2];
             }
             else if(Objects.equals(columnName, "D"))
             {
                 columnNum = 3;
+                type[0] = attrTypes[3];
             }
 
             valueConstraintExpr[0].type1 = new AttrType(AttrType.attrString);
@@ -554,18 +603,24 @@ public class allPrograms {
             System.out.println("FileName: " + fileName);
             FileScan fileScan = new FileScan(
                     fileName,
-                    attrTypes,
-                    sSizes,
-                    (short) attrTypes.length,
-                    targetColumnNames.length,
+                    type,
+                    new short[]{25},
+                    (short) 1,
+                     1,
                     projList,
                     valueConstraintExpr
             );
 
             // Get tuples one by one
             Tuple tuple = new Tuple();
+            tuple.setTuple_length(cf.tupleLength);
+            tuple.setFldCnt((short)cf.columnNames.length);
+            tuple.setFldsOffset(cf.tupleOffSets);
+
+
             while ((tuple = fileScan.get_next()) != null) {
                 // Process the tuple here
+                tuple.initHeaders();
                 System.out.println(Arrays.toString(tuple.getTupleByteArray()));
             }
 

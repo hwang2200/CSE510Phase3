@@ -467,7 +467,7 @@ public class Heapfile implements GlobalConst {
 		  byte [] tmpData = atuple.getTupleByteArray();
 		  currentDataPageRid = currentDirPage.insertRecord(tmpData);
 		  //TODO: DELETE
-			System.out.println("Record ID Returned: " + currentDataPageRid.slotNo);
+			//System.out.println("Record ID Returned: " + currentDataPageRid.slotNo);
 		  RID tmprid = currentDirPage.firstRecord();
 		  
 		  
@@ -583,7 +583,7 @@ public class Heapfile implements GlobalConst {
       RID rid;
       rid = currentDataPage.insertRecord(recPtr);
 		//TODO: DELETE
-		System.out.println("Record ID Returned: " + rid.slotNo);
+		//System.out.println("Record ID Returned: " + rid.slotNo);
       dpinfo.recct++;
       dpinfo.availspace = currentDataPage.available_space();
       
