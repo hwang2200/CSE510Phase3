@@ -66,5 +66,11 @@ public class RID{
     else
       return false;
   }
+
+  @Override
+  public String toString()
+  {
+      return "[ " + String.valueOf(this.pageNo.pid) + " " + String.valueOf(this.slotNo) + " ]";
+  }
   
 }

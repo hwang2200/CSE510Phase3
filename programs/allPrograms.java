@@ -63,16 +63,16 @@ public class allPrograms {
                     //System.out.println("Please enter in a query in the format: DATAFILENAME COLUMNDBNAME COLUMNARFILENAME NUMCOLUMNS");
 
                     System.out.println("Please enter in the name of the Data File: ");
-                    dataFileName = scanner.nextLine();
+                    dataFileName = "sd2";//scanner.nextLine();
 
                     System.out.println("Please enter in the name of the Column DB: ");
-                    colDBName = scanner.nextLine();
+                    colDBName = "sd2";//scanner.nextLine();
 
                     System.out.println("Please enter in the name of the Columnar File: ");
-                    columnarFileName = scanner.nextLine();
+                    columnarFileName = "sd2";//scanner.nextLine();
 
                     System.out.println("Please enter in the number of columns: ");
-                    numColumns = scanner.nextLine();
+                    numColumns = "4"; //scanner.nextLine();
 
                     queryArgs = new String[]{dataFileName, colDBName, columnarFileName, numColumns};
 
@@ -112,22 +112,22 @@ public class allPrograms {
                     System.out.println("Welcome to Query!");
 
                     System.out.println("Please enter in the name of the Column DB: ");
-                    colDBName = scanner.nextLine();
+                    colDBName = "sd2DB"; //scanner.nextLine();
 
                     System.out.println("Please enter in the name of the Columnar File: ");
-                    columnarFileName = scanner.nextLine();
+                    columnarFileName = "sd2COL"; //scanner.nextLine();
 
                     System.out.println("Please enter in the Target Column Name(s) separated by ',': ");
-                    columnName = scanner.nextLine();
+                    columnName = "A"; //scanner.nextLine();
 
                     System.out.println("Please enter in the value constraints (ColumnName Operator Value): ");
-                    valueConstraint = scanner.nextLine();
+                    valueConstraint = "A = Nevada"; // scanner.nextLine();
 
                     System.out.println("Please enter in the number of buffers: ");
-                    numBuf = scanner.nextLine();
+                    numBuf = "0"; //scanner.nextLine();
 
                     System.out.println("Please enter in the access type (\"FILESCAN\", \"COLUMNSCAN\", \"BTREE\", or \"BITMAP\": ");
-                    accessType = scanner.nextLine();
+                    accessType = "BTREE"; //scanner.nextLine();
 
                     queryArgs = new String[]{colDBName, columnarFileName, columnName, valueConstraint, numBuf, accessType};
                     Query(queryArgs, columnarFile);
@@ -223,7 +223,7 @@ public class allPrograms {
             cf.tupleOffSets = offSets;
 
             //Read data from data file
-            byte[] dataFileArray = new byte[byteLength];
+            byte[] dataFileArray = new byte[byteLength + 6];
             int offset = 0;
 
             String currLine = br.readLine();
@@ -449,10 +449,10 @@ public class allPrograms {
                     performFileScan(columnarFileName, targetColNames, valueConstraints, cf);
                     break;
                 case "COLUMNSCAN":
-                    performColumnScan(columnarFileName, targetColNames, valueConstraints);
+                    performColumnScan(columnarFileName, targetColNames, valueConstraints, cf);
                     break;
                 case "BTREE":
-                    performBTreeScan(columnarFileName, targetColNames, valueConstraints);
+                    performBTreeScan(columnarFileName, targetColNames, valueConstraints, cf);
                     break;
                 case "BITMAP":
                     performBitmapScan(columnarFileName, targetColNames, valueConstraints);
@@ -527,13 +527,8 @@ public class allPrograms {
             AttrType[] attrTypes = cf.type;
             AttrType[] type = new AttrType[1];
 
-            FldSpec[] projList = new FldSpec[targetColumnNames.length];
-            for (int i = 0; i < targetColumnNames.length; i++) {
-                projList[i] = new FldSpec(new RelSpec(RelSpec.outer),  i + 1);
-            }
-//            FldSpec[] projList = new FldSpec[1];
-//            RelSpec rel = new RelSpec(RelSpec.outer);
-//            projList[0] = new FldSpec(rel, 1);
+            FldSpec[] projList = new FldSpec[1];
+            projList[0] = new FldSpec(new RelSpec(RelSpec.outer),  1);
 
             //obtains value constraints and ops
             CondExpr[] valueConstraintExpr = new CondExpr[1];
@@ -591,7 +586,7 @@ public class allPrograms {
                 type[0] = attrTypes[3];
             }
 
-            short[] sSizes = new short[1];
+            short[] sSizes = new short[]{50};
             if(type[0].attrType == AttrType.attrInteger)
             {
                 sSizes[0] = 4;
@@ -633,6 +628,10 @@ public class allPrograms {
             // Get tuples one by one
             Tuple tuple = new Tuple();
 
+            tuple.setTuple_length(cf.tupleLength);
+            tuple.setFldCnt((short)cf.type.length);
+            tuple.setFldsOffset(cf.tupleOffSets);
+
             while ((tuple = fileScan.get_next()) != null) {
                 // Process the tuple here
                 tuple.print(type);
@@ -648,7 +647,7 @@ public class allPrograms {
 
     }
 
-    private static void performColumnScan(String columnarFileName, String[] targetColumnNames, String valueConstraint) throws InvalidTupleSizeException, IOException, InvalidTypeException, UnknownKeyTypeException, IndexException, UnknownIndexTypeException, PageNotReadException, UnknowAttrType, FieldNumberOutOfBoundException, PredEvalException, WrongPermat, InvalidRelation, FileScanException, TupleUtilsException {
+    private static void performColumnScan(String columnarFileName, String[] targetColumnNames, String valueConstraint, Columnarfile cf) throws InvalidTupleSizeException, IOException, InvalidTypeException, UnknownKeyTypeException, IndexException, UnknownIndexTypeException, PageNotReadException, UnknowAttrType, FieldNumberOutOfBoundException, PredEvalException, WrongPermat, InvalidRelation, FileScanException, TupleUtilsException {
         // Initialize FldSpec[] for the output fields
         FldSpec[] outFlds = new FldSpec[targetColumnNames.length];
         for (int i = 0; i < targetColumnNames.length; i++) {
@@ -662,32 +661,10 @@ public class allPrograms {
         // Assuming you have a method to retrieve attribute types and sizes for the specified column names
         // You need to implement this method based on your catalog or metadata management
         if (columnarFileName != null) {
-            BufferedReader br = null;
-            try {
-                br = new BufferedReader(new FileReader(columnarFileName));
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-            String[] columns = new String[0];
-            try {
-                columns = br.readLine().split(" ");
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            String[] columns = cf.columnNames;
 
-            String[] columnNames = new String[targetColumnNames.length];
-            AttrType[] columnTypes = new AttrType[targetColumnNames.length];
+            AttrType[] columnTypes = cf.type;
 
-            for (int i = 0; i < columns.length; i++) {
-                String[] columnDetails = columns[i].split(":");
-                columnNames[i] = columnDetails[0];
-
-                if (columnDetails[1].equals("int")) {
-                    columnTypes[i] = new AttrType(AttrType.attrInteger);
-                } else {
-                    columnTypes[i] = new AttrType(AttrType.attrInteger);
-                }
-            }
 
             // Set up other parameters
             int noInFlds = attrTypes.length;
@@ -759,7 +736,7 @@ public class allPrograms {
                 valueConstraintExpr[0].operand2.string = value;
             }
 
-            //String heapName = this.name + ".columnid" + i;
+            //String columnarFileName = this.name + ".columnid" + i;
             ColumnarFileScan columnarFileScan = new ColumnarFileScan(
                     columnarFileName,
                     attrTypes,
@@ -780,18 +757,25 @@ public class allPrograms {
         }
     }
 
-    private static void performBTreeScan(String columnarFileName, String[] targetColumnNames, String valueConstraint) {
+    private static void performBTreeScan(String columnarFileName, String[] targetColumnNames, String valueConstraint, Columnarfile cf) {
         try {
-            BTreeFile btreeFile = new BTreeFile(columnarFileName);
+            BTreeFile btreeFile = cf.bTreeFiles[0];
             BTFileScan btreeScan = btreeFile.new_scan(null, null);
 
             // Iterate over the B-tree index entries
             KeyDataEntry entry;
             while ((entry = btreeScan.get_next()) != null) {
-                IntegerKey key = (IntegerKey) entry.key;
-                RID rid = ((LeafData) entry.data).getData();
+                if(entry.key instanceof IntegerKey) {
+                    IntegerKey key = (IntegerKey) entry.key;
+                    RID rid = ((LeafData) entry.data).getData();
+                    System.out.println("Key: " + key.getKey() + ", RID: " + rid.toString());
+                }
+                else {
+                    StringKey key = (StringKey) entry.key;
+                    RID rid = ((LeafData) entry.data).getData();
+                    System.out.println("Key: " + key.getKey() + ", RID: " + rid.toString());
+                }
 
-                System.out.println("Key: " + key.getKey() + ", RID: " + rid.toString());
             }
 
             // Close the B-tree scan

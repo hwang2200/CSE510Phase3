@@ -31,6 +31,7 @@ public class Columnarfile {
     public int intBitmapRange;
     public int strBitmapRange;
 
+    public BTreeFile[] bTreeFiles;
     public Map<String, Integer> stringHashMap;
 
     public Columnarfile(String name, String[] colNames, int numColumns, AttrType[] type)
@@ -41,7 +42,7 @@ public class Columnarfile {
         this.heapfiles = new Heapfile[numColumns];
         this.heapFileNames = new String[numColumns];
         this.columnNames = colNames;
-
+        this.bTreeFiles = new BTreeFile[columnNames.length];
         // Create a heapfile for each column
         for (int i = 0; i < numColumns; i++) {
             String heapName = this.name + "COL.columnid" + i;
@@ -87,6 +88,7 @@ public class Columnarfile {
                 Convert.setIntValue(dataInt, 0, newData);
                 offset = offset + 4;
 
+                tid.recordIDs[i] = new RID();
                 tid.recordIDs[i] = heapfiles[i].insertRecord(newData);
             }
             if (type[i].attrType == AttrType.attrString) {
@@ -224,6 +226,7 @@ public class Columnarfile {
         }
 
         BTreeFile btreeFile = new BTreeFile("BTreeFile.col" + column, keyType, keySize, DeleteFashion.FULL_DELETE);
+        this.bTreeFiles[column] = btreeFile;
 
         RID rid = new RID();
         Scan s = heapfiles[column].openScan();

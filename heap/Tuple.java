@@ -247,7 +247,7 @@ public class Tuple implements GlobalConst{
          //System.out.println("fldNo: " + fldNo + " , fldCnt: " + fldCnt);
     if ( (fldNo > 0) && (fldNo <= fldCnt))      
      {
-         System.out.println("fldOffset[fldNo -1]: " + fldOffset[fldNo -1] + " : fldOffset[fldNo]" + fldOffset[fldNo]);
+         //System.out.println("fldOffset[fldNo -1]: " + fldOffset[fldNo -1] + " : fldOffset[fldNo]" + fldOffset[fldNo]);
          //System.out.println(Arrays.toString(data));
         val = Convert.getStrValue(fldOffset[fldNo -1], data, 
 		fldOffset[fldNo] - fldOffset[fldNo -1]); //strlen+2

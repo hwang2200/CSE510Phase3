@@ -122,6 +122,7 @@ public class Convert{
       {
         System.out.println("Tried to copy the following: ");
         System.out.println("Length: " + length + " byte[] length: " + data.length + " @position: " + position);
+        System.out.println("Byte[]: " + Arrays.toString(data));
         return "";
       }
       
