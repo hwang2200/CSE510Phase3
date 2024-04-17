@@ -51,7 +51,6 @@ public class PredEval
       while (i < p.length && p[i] != null)
 	{
 	  temp_ptr = p[i];
-	  System.out.println("Op1: " + temp_ptr.operand1.string + " o: " + temp_ptr.op + " Op2: " + temp_ptr.operand2.string);
 	  while (temp_ptr != null)
 	    {
 	      val_type[0] = new AttrType(temp_ptr.type1.attrType);

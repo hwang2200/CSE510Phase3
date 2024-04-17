@@ -9,6 +9,7 @@ import diskmgr.*;
 
 import java.lang.*;
 import java.io.*;
+import java.util.Arrays;
 
 /**
  *open a heapfile and according to the condition expression to get
@@ -65,7 +66,7 @@ public class FileScan extends  Iterator
       AttrType[] Jtypes = new AttrType[n_out_flds];
       short[]    ts_size;
       ts_size = TupleUtils.setup_op_tuple(Jtuple, Jtypes, in1, len_in1, s1_sizes, proj_list, n_out_flds);
-      
+
       OutputFilter = outFilter;
       perm_mat = proj_list;
       nOutFlds = n_out_flds; 
@@ -153,7 +154,24 @@ public class FileScan extends  Iterator
 	closeFlag = true;
       } 
     }
-  
+
+    @Override
+    public String toString()
+    {
+        String result = "FileScan Object Created:\n";
+        result += "AttrTypes: " + Arrays.toString(this._in1) + "\n";
+        result += "s1_sizes[]: " + Arrays.toString(this.s_sizes) + "\n";
+        result += "#attrs in input tuple: " + this.in1_len + "\n";
+        result += "ts_size: " + this.t1_size  + "\n";
+        result += "OutputFilter: " + this.OutputFilter[0].toString() + "\n";
+        result += "proj_list: " + this.perm_mat[0].toString() + "\n";
+        result += "nOutFlds: " + this.nOutFlds + "\n";
+        result += "t1_size: " + this.t1_size + "\n";
+        result += "Tuple1 info: " + Arrays.toString(tuple1.copyFldOffset()) +
+                "\n" + Arrays.toString(tuple1.getTupleByteArray()) + "\n";
+
+        return result;
+    }
 }
 
 

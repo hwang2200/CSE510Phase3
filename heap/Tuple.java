@@ -247,7 +247,8 @@ public class Tuple implements GlobalConst{
          //System.out.println("fldNo: " + fldNo + " , fldCnt: " + fldCnt);
     if ( (fldNo > 0) && (fldNo <= fldCnt))      
      {
-         System.out.println("FldNo: " + fldNo + " : " +Arrays.toString(fldOffset));
+         System.out.println("fldOffset[fldNo -1]: " + fldOffset[fldNo -1] + " : fldOffset[fldNo]" + fldOffset[fldNo]);
+         //System.out.println(Arrays.toString(data));
         val = Convert.getStrValue(fldOffset[fldNo -1], data, 
 		fldOffset[fldNo] - fldOffset[fldNo -1]); //strlen+2
         return val;
@@ -554,17 +555,5 @@ public void setHdr (short numFlds,  AttrType types[], short strSizes[])
         this.fldOffset = fldsOffset;
     }
 
-    public void initHeaders() throws IOException {
-        int pos = tuple_offset;
-        fldCnt = Convert.getShortValue(pos, data);
-
-        fldOffset = new short[fldCnt+1];
-        pos+=2;
-        for(int i = 0;i<=fldCnt; i++)
-        {
-            fldOffset[i] = Convert.getShortValue(pos, data);
-            pos+=2;
-        }
-    }
 }
 

@@ -112,16 +112,16 @@ public class Convert{
       InputStream in;
       DataInputStream instr;
       String value;
-      byte tmp[] = new byte[length];  
-      //System.out.println("Length: " + length + " position: " + position + " byte[]: " + Arrays.toString(data));
+      byte tmp[] = new byte[length];
       // copy the value from data array out to a tmp byte array
+      //System.arraycopy (data, position, tmp, 0, length);
       try {
         System.arraycopy (data, position, tmp, 0, length);
       }
       catch (Exception e)
       {
-        //System.out.println("Tried to copy the following: ");
-        //System.out.println("Length: " + length + " position: " + position + " byte[]: " + Arrays.toString(data));
+        System.out.println("Tried to copy the following: ");
+        System.out.println("Length: " + length + " byte[] length: " + data.length + " @position: " + position);
         return "";
       }
       

@@ -223,7 +223,7 @@ public class Columnarfile {
             keySize = 25;
         }
 
-        BTreeFile btreeFile = new BTreeFile("BTree File " + column, keyType, keySize, DeleteFashion.FULL_DELETE);
+        BTreeFile btreeFile = new BTreeFile("BTreeFile.col" + column, keyType, keySize, DeleteFashion.FULL_DELETE);
 
         RID rid = new RID();
         Scan s = heapfiles[column].openScan();
@@ -244,9 +244,9 @@ public class Columnarfile {
                 KeyDataEntry tmpKDE = btscan.get_next();
                 while (tmpKDE != null) {
                     LeafData tmpData = (LeafData) tmpKDE.data;
-                    //System.out.println("LeafData: " + tmpData);
-                    //RID tmpRid = tmpData.getData();
-                    //System.out.println("RID: " + tmpRid);
+                    System.out.println("LeafData: " + tmpData);
+                    RID tmpRid = tmpData.getData();
+                    System.out.println("RID: " + tmpRid);
                     tmpKDE = btscan.get_next();
                 }
 
@@ -254,6 +254,7 @@ public class Columnarfile {
             catch (Exception e)
             {
                 System.out.println("Error occurred while doing BTScan");
+                return false;
             }
 
         return true;

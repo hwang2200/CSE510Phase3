@@ -241,6 +241,7 @@ public class allPrograms {
                 }
                 cf.insertTuple(dataFileArray);
                 offset = 0;
+                System.out.println(currLine + ": " + Arrays.toString(dataFileArray) + " : Length: " + dataFileArray.length);
                 Arrays.fill(dataFileArray, (byte)0);
                 currLine = br.readLine();
             }
@@ -325,7 +326,13 @@ public class allPrograms {
                 return;
             }
 
-            cf.createBTreeIndex(columnNum); // creates BTreeIndex
+            if(cf.createBTreeIndex(columnNum)) // creates BTreeIndex
+            {
+                System.out.println("BTREE Index successful");
+            }
+            else {
+                System.out.println("BTREE Index Failed");
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -513,20 +520,20 @@ public class allPrograms {
 
     private static void performFileScan(String columnarFileName, String[] targetColumnNames, String valueConstraint, Columnarfile cf) {
         try {
-            short[] sSizes = new short[]{25,25};
+
             String[] columns = cf.columnNames;
 
             //String[] columnNames = new String[targetColumnNames.length];
             AttrType[] attrTypes = cf.type;
             AttrType[] type = new AttrType[1];
 
-            //FldSpec[] projList = new FldSpec[targetColumnNames.length];
-            //for (int i = 0; i < targetColumnNames.length; i++) {
-            //    projList[i] = new FldSpec(new RelSpec(RelSpec.outer), i + 1);
-            //}
-            FldSpec[] projList = new FldSpec[1];
-            RelSpec rel = new RelSpec(RelSpec.outer);
-            projList[0] = new FldSpec(rel, 1);
+            FldSpec[] projList = new FldSpec[targetColumnNames.length];
+            for (int i = 0; i < targetColumnNames.length; i++) {
+                projList[i] = new FldSpec(new RelSpec(RelSpec.outer),  i + 1);
+            }
+//            FldSpec[] projList = new FldSpec[1];
+//            RelSpec rel = new RelSpec(RelSpec.outer);
+//            projList[0] = new FldSpec(rel, 1);
 
             //obtains value constraints and ops
             CondExpr[] valueConstraintExpr = new CondExpr[1];
@@ -563,6 +570,7 @@ public class allPrograms {
                 valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopGE);
             }
 
+
             if(Objects.equals(columnName, "A"))
             {
                 columnNum = 0;
@@ -583,6 +591,15 @@ public class allPrograms {
                 type[0] = attrTypes[3];
             }
 
+            short[] sSizes = new short[1];
+            if(type[0].attrType == AttrType.attrInteger)
+            {
+                sSizes[0] = 4;
+            }
+            else {
+                sSizes[0] = 25;
+            }
+
             valueConstraintExpr[0].type1 = new AttrType(AttrType.attrString);
             valueConstraintExpr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), columnNum);
             valueConstraintExpr[0].operand1.string = columnName;
@@ -600,28 +617,25 @@ public class allPrograms {
 
 
             String fileName = columnarFileName + ".columnid" + columnNum;
-            System.out.println("FileName: " + fileName);
+
             FileScan fileScan = new FileScan(
                     fileName,
                     type,
-                    new short[]{25},
+                    sSizes,
                     (short) 1,
                      1,
                     projList,
                     valueConstraintExpr
             );
 
+            System.out.println(fileScan.toString());
+
             // Get tuples one by one
             Tuple tuple = new Tuple();
-            tuple.setTuple_length(cf.tupleLength);
-            tuple.setFldCnt((short)cf.columnNames.length);
-            tuple.setFldsOffset(cf.tupleOffSets);
-
 
             while ((tuple = fileScan.get_next()) != null) {
                 // Process the tuple here
-                tuple.initHeaders();
-                System.out.println(Arrays.toString(tuple.getTupleByteArray()));
+                tuple.print(type);
             }
 
             // Close the file scan
@@ -629,6 +643,9 @@ public class allPrograms {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+
+
     }
 
     private static void performColumnScan(String columnarFileName, String[] targetColumnNames, String valueConstraint) throws InvalidTupleSizeException, IOException, InvalidTypeException, UnknownKeyTypeException, IndexException, UnknownIndexTypeException, PageNotReadException, UnknowAttrType, FieldNumberOutOfBoundException, PredEvalException, WrongPermat, InvalidRelation, FileScanException, TupleUtilsException {

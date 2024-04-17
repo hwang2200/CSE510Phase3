@@ -5,6 +5,7 @@ import heap.*;
 import global.*;
 import java.io.*;
 import java.lang.*;
+import java.util.Arrays;
 
 /**
  *some useful method when processing Tuple 

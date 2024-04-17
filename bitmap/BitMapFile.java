@@ -228,7 +228,7 @@ public class BitMapFile
 				}
 
 				//TODO
-				System.out.println(Arrays.toString(data));
+				//System.out.println(Arrays.toString(data));
 
 				if ((key == 0 && page.available_space() >= 2) || (key == 1 && page.available_space() >= 4)) {
 					// Page exists with space
