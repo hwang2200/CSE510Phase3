@@ -267,7 +267,7 @@ public class BitMapFile
 					// TODO: Modify headerpage so it stores information about how to insert using
 
 				}
-				//TODO
+				//TODO print bitmap array
 				System.out.println(Arrays.toString(data));
 
 				page.writeBMPageArray(data);
