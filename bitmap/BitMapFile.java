@@ -25,6 +25,10 @@ public class BitMapFile
 	public BitMapFile(String filename)
 			throws GetFileEntryException,
 			ConstructPageException {
+
+		//TODO bitmapfile found
+		System.out.println("BitMapFile found: " + filename);
+
 		headerPageId = get_file_entry(filename);
 		headerPage = new BitMapHeaderPage(headerPageId);
 		bmfilename = filename;
@@ -293,6 +297,7 @@ public class BitMapFile
 	private PageId get_file_entry(String filename)
 			throws GetFileEntryException {
 		try {
+			System.out.println("PageId: " + SystemDefs.JavabaseDB.get_file_entry(filename));
 			return SystemDefs.JavabaseDB.get_file_entry(filename);
 		} catch (Exception e) {
 			e.printStackTrace();

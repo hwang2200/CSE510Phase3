@@ -31,6 +31,7 @@ import static global.GlobalConst.INVALID_PAGE;
 public class allPrograms {
     public static void main(String[] args) throws UnknownKeyTypeException, InvalidTupleSizeException, InvalidTypeException {
         Columnarfile columnarFile = null;
+        BitMapFile bitmapFile = null;
         Scanner scanner = new Scanner(System.in);
         String option = null;
         String dataFileName;
@@ -124,10 +125,10 @@ public class allPrograms {
                     valueConstraint = "A = Nevada"; // scanner.nextLine();
 
                     System.out.println("Please enter in the number of buffers: ");
-                    numBuf = "0"; //scanner.nextLine();
+                    numBuf = "1"; //scanner.nextLine();
 
                     System.out.println("Please enter in the access type (\"FILESCAN\", \"COLUMNSCAN\", \"BTREE\", or \"BITMAP\": ");
-                    accessType = "BTREE"; //scanner.nextLine();
+                    accessType = "BITMAP"; //scanner.nextLine();
 
                     queryArgs = new String[]{colDBName, columnarFileName, columnName, valueConstraint, numBuf, accessType};
                     Query(queryArgs, columnarFile);
@@ -455,7 +456,7 @@ public class allPrograms {
                     performBTreeScan(columnarFileName, targetColNames, valueConstraints, cf);
                     break;
                 case "BITMAP":
-                    performBitmapScan(columnarFileName, targetColNames, valueConstraints);
+                    performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf);
                     break;
                 default:
                     System.err.println("Invalid access type");
@@ -785,25 +786,81 @@ public class allPrograms {
         }
     }
 
-    private static void performBitmapScan(String columnarFileName, String[] targetColumnNames, String valueConstraint) {
+    private static void performBitmapScan(String columnarFileName, String[] targetColumnNames, String valueConstraint, Columnarfile cf) {
         try {
-            String[] columnNames = new String[targetColumnNames.length];
-            AttrType[] columnTypes = new AttrType[targetColumnNames.length];
+            //obtains value constraints and ops
+            CondExpr[] valueConstraintExpr = new CondExpr[1];
+            valueConstraintExpr[0] = new CondExpr();
+            String[] values = valueConstraint.split(" ");
+            //TODO check value constraint
+            System.out.println("ValueConstraints passing in: " + Arrays.toString(values));
+            String columnName = values[0];
+            int columnNum = 0;
+            String operator = values[1];
+            String value = values[2];
 
-            for (int i = 0; i < targetColumnNames.length; i++) {
-                String[] columnDetails = targetColumnNames[i].split(":");
-                columnNames[i] = columnDetails[0];
-
-                if (columnDetails[1].equals("int")) {
-                    columnTypes[i] = new AttrType(AttrType.attrInteger);
-                } else {
-                    columnTypes[i] = new AttrType(AttrType.attrString);
-                }
+            if(Objects.equals(operator, "<"))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopLT);
             }
-            Columnarfile columnarFile = new Columnarfile(columnarFileName, targetColumnNames, targetColumnNames.length, columnTypes);
+            else if(Objects.equals(operator, ">"))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopGT);
+            }
+            else if(Objects.equals(operator, "="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopEQ);
+            }
+            else if(Objects.equals(operator, "!="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopNE);
+            }
+            else if(Objects.equals(operator, "<="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopLE);
+            }
+            else if(Objects.equals(operator, ">="))
+            {
+                valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopGE);
+            }
+
+
+            if(Objects.equals(columnName, "A"))
+            {
+                columnNum = 0;
+            }
+            else if(Objects.equals(columnName, "B"))
+            {
+                columnNum = 1;
+            }
+            else if(Objects.equals(columnName, "C")) {
+                columnNum = 2;
+            }
+            else if(Objects.equals(columnName, "D"))
+            {
+                columnNum = 3;
+            }
+
+            valueConstraintExpr[0].type1 = new AttrType(AttrType.attrString);
+            valueConstraintExpr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), columnNum);
+            valueConstraintExpr[0].operand1.string = columnName;
+
+            if(value.matches("^\\d+$"))
+            {
+                valueConstraintExpr[0].type2 = new AttrType(AttrType.attrInteger);
+                valueConstraintExpr[0].operand2.integer = Integer.parseInt(value);
+            }
+            else
+            {
+                valueConstraintExpr[0].type2 = new AttrType(AttrType.attrString);
+                valueConstraintExpr[0].operand2.string = value;
+            }
+
+            //TODO
+            System.out.println(valueConstraintExpr[0].operand1.string + ", " + valueConstraintExpr[0].operand2.string);
 
             // Open the bitmap file for the specified column
-            BitMapFile bitmapFile = new BitMapFile(columnarFileName);
+            BitMapFile bitmapFile = new BitMapFile(columnarFileName + columnNum);
 
             BMPage page = new BMPage();
             PageId nextPageId = bitmapFile.getHeaderPage().getNextPage();
@@ -825,7 +882,7 @@ public class allPrograms {
                             tid.recordIDs[j] = rid;
                         }
                         // Retrieve the tuple using the TID
-                        Tuple tuple = columnarFile.getTuple(tid);
+                        Tuple tuple = cf.getTuple(tid);
                         System.out.println(tuple);
                     }
                 }
