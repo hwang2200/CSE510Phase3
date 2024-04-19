@@ -334,4 +334,12 @@ public class BMPage extends Page
         }
 
     }
+
+    public int getSlotCnt()
+    {
+        return this.slotCnt;
+    }
+
+    public int getStartByte()
+    {return this.DPFIXED;}
 }

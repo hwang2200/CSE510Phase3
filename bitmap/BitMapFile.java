@@ -2,15 +2,18 @@ package bitmap;
 
 import btree.*;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import bufmgr.*;
-import com.sun.jdi.IntegerValue;
 import global.*;
 import columnar.*;
+import heap.HFBufMgrException;
+import heap.HFDiskMgrException;
+import heap.InvalidSlotNumberException;
+import heap.InvalidTupleSizeException;
 import value.*;
-import diskmgr.*;
-import heap.*;
 
 public class BitMapFile
 		implements GlobalConst {
@@ -22,24 +25,34 @@ public class BitMapFile
 	private String bmfilename;
 	private final static int MAGIC0=1989;
 
+
+
 	public BitMapFile(String filename)
 			throws GetFileEntryException,
-			ConstructPageException {
+			ConstructPageException, IOException {
 
-		//TODO bitmapfile found
-		System.out.println("BitMapFile found: " + filename);
+
 
 		headerPageId = get_file_entry(filename);
 		headerPage = new BitMapHeaderPage(headerPageId);
 		bmfilename = filename;
+
+		//TODO bitmapfile found
+		System.out.println("BitMapFile found: " + filename);
+		System.out.println("HeaderPageID: " + headerPageId);
+		System.out.println("HeaderPage Curr Page: " + headerPage.getPageId());
+		System.out.println("RootID: " + headerPage.get_rootId());
+		System.out.println("KeyType: " + headerPage.get_keyType());
+		System.out.println("SlotCount: " + headerPage.getSlotCnt());
+		System.out.println();
+
 	}
 
-	public BitMapFile(String filename, Columnarfile columnFile, int ColumnNo, ValueClass value)
+	public BitMapFile(String filename, Columnarfile columnarFile, int ColumnNo, ValueClass value)
 			throws GetFileEntryException,
 			ConstructPageException,
 			IOException,
-			AddFileEntryException
-	{
+			AddFileEntryException, HFDiskMgrException, InvalidSlotNumberException, InvalidTupleSizeException, HFBufMgrException {
 
 		headerPageId = get_file_entry(filename);
 		if (headerPageId == null)
@@ -54,9 +67,9 @@ public class BitMapFile
 		}
 		else
 		{
+
 			headerPage = new BitMapHeaderPage(headerPageId);
 		}
-
 
 		bmfilename = filename;
 
@@ -70,6 +83,15 @@ public class BitMapFile
 		{
 			headerPage.set_keyType((short) 1);
 		}
+
+		//TODO bitmapfile found
+		System.out.println("BitMapFile created: " + filename);
+		System.out.println("HeaderPageID: " + headerPageId);
+		System.out.println("HeaderPage Curr Page: " + headerPage.getPageId());
+		System.out.println("RootID: " + headerPage.get_rootId());
+		System.out.println("KeyType: " + headerPage.get_keyType());
+		System.out.println("SlotCount: " + headerPage.getSlotCnt());
+		System.out.println();
 
 	}
 
@@ -193,11 +215,17 @@ public class BitMapFile
 			int key = headerPage.get_keyType();
 
 			BMPage page = new BMPage();
+			PageId apage = new PageId();
 
 			//if no header page, need to create new one
 			if(headerPage.get_rootId().pid == INVALID_PAGE)
 			{
+				System.out.println("HeaderPageRoot.PID == INVALID PAGE");
 				//Create new page and page structure
+				page.setNextPage(new PageId(INVALID_PAGE));
+				headerPage.set_rootId(page.getCurPage());
+
+
 				page = new BMPage(headerPage);
 				this.headerPageId = page.getCurPage();
 
@@ -246,10 +274,12 @@ public class BitMapFile
 					newpage.setPrevPage(page.getCurPage());
 					newpage.writeBMPageArray(data);
 				}
+				System.out.println("Key: " + key + ", data[]: " + Arrays.toString(data));
 			}
 			//header page exists (simply insert the record)
 			else
 			{
+				System.out.println("HeaderPageRoot.PID EXISTS");
 				byte[] data;
 				if (key == 0 || key == 1) {
 					data = new byte[bitmapRange];
@@ -268,10 +298,13 @@ public class BitMapFile
 
 				}
 				//TODO print bitmap array
-				System.out.println(Arrays.toString(data));
 
+
+				System.out.println("Key: " + key + ", data[]: " + Arrays.toString(data));
 				page.writeBMPageArray(data);
+
 			}
+
 
 			return true;
 		} catch (Exception e) {
@@ -287,8 +320,12 @@ public class BitMapFile
 	private void add_file_entry(String fileName, PageId pageno)
 			throws AddFileEntryException {
 		try {
+
 			SystemDefs.JavabaseDB.add_file_entry(fileName, pageno);
+			//TODO
+			System.out.println("Added file entry to DB: " + fileName + " Pg#: " + pageno);
 		} catch (Exception e) {
+
 			e.printStackTrace();
 			throw new AddFileEntryException(e, "");
 		}
@@ -297,8 +334,16 @@ public class BitMapFile
 	private PageId get_file_entry(String filename)
 			throws GetFileEntryException {
 		try {
-			System.out.println("PageId: " + SystemDefs.JavabaseDB.get_file_entry(filename));
-			return SystemDefs.JavabaseDB.get_file_entry(filename);
+
+			PageId result = SystemDefs.JavabaseDB.get_file_entry(filename);
+			if (result != null) {
+				System.out.println("FileFound: " + filename);
+				System.out.println("PageId: " + result.toString());
+			}
+			else {
+				System.out.println("File not found: " + filename);
+			}
+			return result;
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new GetFileEntryException(e, "");
@@ -334,4 +379,5 @@ public class BitMapFile
 			throw new FreePageException(e, "");
 		}
 	}
+
 }

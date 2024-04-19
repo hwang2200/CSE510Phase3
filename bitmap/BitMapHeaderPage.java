@@ -15,6 +15,7 @@ public class BitMapHeaderPage extends HFPage {
             PageId pageId = SystemDefs.JavabaseBM.newPage(apage, 1);
             if (pageId == null)
                 throw new ConstructPageException(null, "new page failed");
+            this.init(pageId, apage);
         } catch (Exception e) {
             throw new ConstructPageException(e, "construct header page failed");
         }
@@ -51,20 +52,20 @@ public class BitMapHeaderPage extends HFPage {
 
     void set_keyType(short key_type)
             throws IOException {
-        setSlot(1, (int) key_type, 0);
+        setSlot(2, (int) key_type, 0);
     }
 
     short get_keyType()
             throws IOException {
-        return (short) getSlotLength(1);
+        return (short) getSlotLength(2);
     }
 
     void set_colNum(int colNum) throws IOException {
-        setSlot(2, colNum, 0);
+        setSlot(1, colNum, 0);
     }
 
     int get_colNum(int colNum) throws IOException {
-        return getSlotLength(2);
+        return getSlotLength(1);
     }
 
     void  set_rootId( PageId rootID )
@@ -73,7 +74,7 @@ public class BitMapHeaderPage extends HFPage {
         setNextPage(rootID);
     }
 
-    PageId get_rootId()
+    public PageId get_rootId()
             throws IOException
     {
         return getNextPage();

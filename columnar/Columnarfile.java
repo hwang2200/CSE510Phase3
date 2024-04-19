@@ -1,5 +1,6 @@
 package columnar;
 
+import bitmap.BM;
 import diskmgr.*;
 import global.*;
 import heap.*;
@@ -22,6 +23,7 @@ public class Columnarfile {
     public static int numColumns;
     public AttrType[] type;
     public Heapfile[] heapfiles;
+    public BitMapFile[] BMFiles;
     public String[] heapFileNames;
     public Heapfile columnarFile;
     public int tupleLength;
@@ -41,6 +43,7 @@ public class Columnarfile {
         this.type = type;
         this.heapfiles = new Heapfile[numColumns];
         this.heapFileNames = new String[numColumns];
+        this.BMFiles = new BitMapFile[numColumns];
         this.columnNames = colNames;
         this.bTreeFiles = new BTreeFile[columnNames.length];
         // Create a heapfile for each column
@@ -266,14 +269,18 @@ public class Columnarfile {
     public boolean createBitMapIndex(int columnNo, ValueClass value) {
         try {
             BitMapFile bitmapFile;
-            String filename = this.name + columnNo;
-            if(Files.exists(Paths.get(filename)))
+            String filename = this.name + "_" + columnNo;
+
+            if(SystemDefs.JavabaseDB.get_file_entry(filename) != null)
             {
+                System.out.println("BitmapFile already exists: " + filename);
                 bitmapFile = new BitMapFile(filename);
             }
             else
             {
-                bitmapFile = new BitMapFile(this.name + columnNo, this, columnNo, value);
+                System.out.println("Creating new BitmapFile: " + filename);
+                bitmapFile = new BitMapFile(filename, this, columnNo, value);
+
             }
 
             if(value instanceof IntegerValueClass)
@@ -304,6 +311,10 @@ public class Columnarfile {
             }
 
 
+
+            //TODO
+            //BTreeFile tmpB = new BTreeFile(filename);
+            this.BMFiles[columnNo] = bitmapFile;
             return true;
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,8 +1,10 @@
 package programs;
 
 import TID.TID;
+import bitmap.BM;
 import bitmap.BMPage;
 import bitmap.BitMapFile;
+import bitmap.BitMapHeaderPage;
 import btree.*;
 import bufmgr.PageNotReadException;
 import columnar.ColumnarFileMetadata;
@@ -28,7 +30,10 @@ import java.util.*;
 
 import static global.GlobalConst.INVALID_PAGE;
 
+
 public class allPrograms {
+
+
     public static void main(String[] args) throws UnknownKeyTypeException, InvalidTupleSizeException, InvalidTypeException {
         Columnarfile columnarFile = null;
         BitMapFile bitmapFile = null;
@@ -92,10 +97,10 @@ public class allPrograms {
                     //System.out.println("Please enter in a query in the format: COLUMNDBNAME COLUMNARFILENAME COLUMNAME INDEXTYPE");
 
                     System.out.println("Please enter in the name of the Column DB: ");
-                    colDBName = scanner.nextLine();
+                    colDBName = "sd2DB"; //scanner.nextLine();
 
                     System.out.println("Please enter in the name of the Columnar File: ");
-                    columnarFileName = scanner.nextLine();
+                    columnarFileName = "sd2COL"; //scanner.nextLine();
 
                     System.out.println("Please enter in the Target Column Name: ");
                     columnName = scanner.nextLine();
@@ -365,7 +370,7 @@ public class allPrograms {
             Scan s = cf.heapfiles[columnNum].openScan();
             Tuple tuple = s.getNext(rid);
 
-            //Find range to create bitmap for each value
+            //Find range to create bitmap for each value1
             int maxValue = Integer.MIN_VALUE;
             int minValue = Integer.MAX_VALUE;
             ArrayList<Integer> intValuesList = new ArrayList<>();
@@ -421,9 +426,42 @@ public class allPrograms {
                 }
             }
 
+            BitMapFile bmFile = cf.BMFiles[0];
+            PageId rootID = bmFile.getHeaderPage().get_rootId();
+
+            Page tmpPg = new Page();
+            try
+            {
+                SystemDefs.JavabaseBM.pinPage(rootID, tmpPg, false);
+
+            }
+            catch (Exception e)
+            {
+                System.out.println("Pin page failed");
+            }
+            BMPage tmpBMpage = new BMPage(tmpPg);
+            rootID = tmpBMpage.getNextPage();
+            try
+            {
+                SystemDefs.JavabaseBM.pinPage(rootID, tmpPg, false);
+                byte [] data = tmpBMpage.getBMpageArray();
+                System.out.println("Data found, length: " + data.length);
+                System.out.println(Arrays.toString(data));
+            }
+            catch (Exception e)
+            {
+                System.out.println("Pin page failed second time");
+            }
+
+
+
+
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }
+
     }
 
     public static void Query(String[] args, Columnarfile cf) throws UnknownKeyTypeException, InvalidTupleSizeException, InvalidTypeException {
@@ -890,9 +928,81 @@ public class allPrograms {
                 nextPageId = page.getNextPage();
             }
 
+            if(GlobalDebug.debug) {
+                BM bitmap = new BM();
+                BitMapFile tmpBMF = new BitMapFile("sd2_0");
+                int[] pos = new int[50];
+                int matches = 0;
+                PageId bmfRoot = tmpBMF.getHeaderPage().get_rootId();
+
+                System.out.println("bmfRoot: " + bmfRoot);
+                Page tmpPg = null;
+                do {
+                    try {
+                        tmpPg = new Page();
+                        SystemDefs.JavabaseBM.pinPage(bmfRoot, tmpPg, false);
+                    } catch (Exception e) {
+                        System.out.println("Exception while pinning page in all programs");
+                        break;
+                    }
+                    BMPage tmpBMPage = new BMPage(tmpPg);
+                    byte[] tmpData;
+                    tmpData = tmpBMPage.getBMpageArray();
+                    int count = tmpBMPage.getSlotCnt();
+                    int start = tmpBMPage.getStartByte();
+
+                    System.out.println("BMPSltCnt: " + tmpBMPage.getSlotCnt());
+                    int end = start + count;
+                    for (int i = start; i < end; i++) {
+                        if (tmpData[i] == 1) {
+                            pos[matches] = i;
+                            matches++;
+                        }
+                    }
+                    bmfRoot = tmpBMPage.getNextPage();
+                } while (bmfRoot.pid != INVALID_PAGE);
+
+                System.out.println("Matches:" + matches);
+
+
+                int size = matches;
+                int targetsize = 1;
+
+                for(int i = 0; i < size; i++)
+                {
+                    for(int j =0; j < targetsize; j++)
+                    {
+                        Scan scancol = cf.openColumnScan(0);
+                        RID tmpRid = new RID();
+                        Tuple tmpT = new Tuple();
+                        String colVal = "";
+                        int count = 0;
+
+                        while ((tmpT = scancol.getNext(tmpRid)) != null) {
+                            if(count < pos[i]){
+                                count++;
+                            }
+                            else {
+                                short[] fieldOffset = {0, 25, 50, 54};
+                                tmpT.setTuple_length(cf.tupleLength);
+                                tmpT.setFldCnt((short) cf.heapfiles.length);
+                                tmpT.setFldsOffset(fieldOffset);
+                                colVal = tmpT.getStrFld(1);
+                                System.out.println("colVal: " + colVal);
+                                System.out.println();
+                            }
+                        }
+                    }
+
+                }
+
+            }
+
+
             bitmapFile.close(); // Close the bitmap file after scanning
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 }
+

@@ -4,6 +4,7 @@ package heap;
 
 import java.io.*;
 import java.lang.*;
+import java.util.Arrays;
 
 import global.*;
 import diskmgr.*;
@@ -307,6 +308,7 @@ public class HFPage extends Page
       Convert.setShortValue((short)length, position, data);
       Convert.setShortValue((short)offset, position+2, data);
     }
+
   
   /**
    * @param	slotno	slot number
