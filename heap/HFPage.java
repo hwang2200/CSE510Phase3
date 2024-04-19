@@ -291,6 +291,8 @@ public class HFPage extends Page
     throws IOException
     {
       slotCnt =  Convert.getShortValue (SLOT_CNT, data);
+      //TODO
+        System.out.println("HFPage.java getSlotCnt() - Slot Count used: " + slotCnt);
       return slotCnt;
     }
   
@@ -307,6 +309,9 @@ public class HFPage extends Page
       int position = DPFIXED + slotno * SIZE_OF_SLOT;
       Convert.setShortValue((short)length, position, data);
       Convert.setShortValue((short)offset, position+2, data);
+
+      //TODO
+        System.out.println("HFPage.java setSlot() - Set slot " + slotno + " contents with: " + Arrays.toString(data));
     }
 
   
@@ -320,6 +325,10 @@ public class HFPage extends Page
     {
       int position = DPFIXED + slotno * SIZE_OF_SLOT;
       short val= Convert.getShortValue(position, data);
+
+      //TODO
+        System.out.println("HFPage.java getSlotLength() - Length of record in slot " + slotno + ": " + val);
+
       return val;
     }
   

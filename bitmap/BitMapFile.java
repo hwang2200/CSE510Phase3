@@ -42,7 +42,7 @@ public class BitMapFile
 		System.out.println("HeaderPageID: " + headerPageId);
 		System.out.println("HeaderPage Curr Page: " + headerPage.getPageId());
 		System.out.println("RootID: " + headerPage.get_rootId());
-		System.out.println("KeyType: " + headerPage.get_keyType());
+		System.out.println("KeyType (existing bitmap): " + headerPage.get_keyType());
 		System.out.println("SlotCount: " + headerPage.getSlotCnt());
 		System.out.println();
 
@@ -54,6 +54,7 @@ public class BitMapFile
 			IOException,
 			AddFileEntryException, HFDiskMgrException, InvalidSlotNumberException, InvalidTupleSizeException, HFBufMgrException {
 
+		//File not found is expected so we can create new header page
 		headerPageId = get_file_entry(filename);
 		if (headerPageId == null)
 		{
@@ -63,25 +64,32 @@ public class BitMapFile
 			headerPage.set_magic0(MAGIC0);
 			headerPage.set_colNum(ColumnNo);
 			headerPage.set_rootId(new PageId(INVALID_PAGE));
-			headerPage.setType(NodeType.BTHEAD);
+			bmfilename = filename;
+
+			// Sets the header key for the value type
+			if (value instanceof IntegerValueClass)
+			{
+				headerPage.set_keyType((short) 0);
+			}
+			else if (value instanceof StringValueClass)
+			{
+				headerPage.set_keyType((short) 1);
+			}
 		}
 		else
 		{
-
 			headerPage = new BitMapHeaderPage(headerPageId);
-		}
+			bmfilename = filename;
 
-		bmfilename = filename;
-
-
-		// Sets the header key for the value type
-		if (value instanceof IntegerValueClass)
-		{
-			headerPage.set_keyType((short) 0);
-		}
-		else if (value instanceof StringValueClass)
-		{
-			headerPage.set_keyType((short) 1);
+			// Sets the header key for the value type
+			if (value instanceof IntegerValueClass)
+			{
+				headerPage.set_keyType((short) 0);
+			}
+			else if (value instanceof StringValueClass)
+			{
+				headerPage.set_keyType((short) 1);
+			}
 		}
 
 		//TODO bitmapfile found
@@ -195,7 +203,7 @@ public class BitMapFile
 				page.writeBMPageArray(data);
 
 			} else {
-				// Need to add a new page
+				// TODO Need to add a new page
 				BMPage newpage = new BMPage();
 				page.setNextPage(newpage.getCurPage());
 				newpage.setPrevPage(page.getCurPage());
@@ -268,7 +276,9 @@ public class BitMapFile
 				}
 				else
 				{
-					// Need to add a new page
+					//TODO Need to add a new page
+					//Right after the key becomes 14, reaches here
+					System.out.println("No page space left, need to add new page");
 					BMPage newpage = new BMPage();
 					page.setNextPage(newpage.getCurPage());
 					newpage.setPrevPage(page.getCurPage());

@@ -407,7 +407,7 @@ public class allPrograms {
             for (int i = 0; i < distinctStr.size(); i++) {
                 stringID.put(distinctStr.get(i), i);
             }
-            cf.strBitmapRange = distinctStr.size();
+            cf.strBitmapRange = distinctStr.size(); //14
             cf.stringHashMap = stringID;
 
             //TODO - Delete
@@ -425,7 +425,7 @@ public class allPrograms {
                     cf.createBitMapIndex(columnNum, valueS);
                 }
             }
-
+            /*
             BitMapFile bmFile = cf.BMFiles[0];
             PageId rootID = bmFile.getHeaderPage().get_rootId();
 
@@ -433,12 +433,13 @@ public class allPrograms {
             try
             {
                 SystemDefs.JavabaseBM.pinPage(rootID, tmpPg, false);
-
             }
             catch (Exception e)
             {
-                System.out.println("Pin page failed");
+                //TODO
+                System.out.println("allPrograms.java: Pin page failed");
             }
+
             BMPage tmpBMpage = new BMPage(tmpPg);
             rootID = tmpBMpage.getNextPage();
             try
@@ -450,13 +451,10 @@ public class allPrograms {
             }
             catch (Exception e)
             {
-                System.out.println("Pin page failed second time");
+                System.out.println("allPrograms.java: Pin page failed second time");
             }
 
-
-
-
-
+             */
 
         } catch (Exception e) {
             e.printStackTrace();
