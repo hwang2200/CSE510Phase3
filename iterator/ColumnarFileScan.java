@@ -76,7 +76,6 @@ public class ColumnarFileScan extends Iterator {
         int count = 0;
         while (true) {
             if ((tuple1 = scan.getNext(rid)) == null) {
-                System.out.println("Tuple count of scan: " + count);
                 return null;
             }
             count++;

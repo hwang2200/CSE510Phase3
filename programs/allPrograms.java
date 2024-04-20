@@ -124,10 +124,10 @@ public class allPrograms {
                     columnarFileName = "sd2COL"; //scanner.nextLine();
 
                     System.out.println("Please enter in the Target Column Name(s) separated by ',': ");
-                    columnName = "A"; //scanner.nextLine();
+                    columnName = "C"; //scanner.nextLine();
 
                     System.out.println("Please enter in the value constraints (ColumnName Operator Value): ");
-                    valueConstraint = "A = Nevada"; // scanner.nextLine();
+                    valueConstraint = "C = 6"; // scanner.nextLine();
 
                     System.out.println("Please enter in the number of buffers: ");
                     numBuf = "1"; //scanner.nextLine();
@@ -247,15 +247,13 @@ public class allPrograms {
                 }
                 cf.insertTuple(dataFileArray);
                 offset = 0;
-                System.out.println(currLine + ": " + Arrays.toString(dataFileArray) + " : Length: " + dataFileArray.length);
+                //System.out.println(currLine + ": " + Arrays.toString(dataFileArray) + " : Length: " + dataFileArray.length);
                 Arrays.fill(dataFileArray, (byte)0);
                 currLine = br.readLine();
             }
             br.close();
 
-            // Print out the number of disk pages read and written
-            System.out.println("Number of disk pages read: " + PCounter.getReadCount());
-            System.out.println("Number of disk pages written: " + PCounter.getWriteCount());
+
 
             TupleScan tscan = new TupleScan(cf);
 
@@ -269,16 +267,21 @@ public class allPrograms {
             {
                 tid.recordIDs[i] = new RID();
             }
-
+            System.out.println();
             while((tuple = tscan.getNext(tid)) != null)
             {
-                System.out.println("Record Fetched:");
+                System.out.println("Record Inserted:");
                 tuple.print(columnTypes);
+                System.out.println();
             }
 
             tscan.closetuplescan();
 
 
+            // Print out the number of disk pages read and written
+            System.out.println("Number of disk pages read: " + PCounter.getReadCount());
+            System.out.println("Number of disk pages written: " + PCounter.getWriteCount());
+            System.out.println();
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -397,7 +400,7 @@ public class allPrograms {
 
             int range = maxValue - minValue + 1;
             cf.intBitmapRange = range;
-            System.out.println("Int Range: " + range);
+
 
             //Str range (number of distinct strings)
             String[] strValArray = strValuesList.toArray(new String[0]);
@@ -411,9 +414,15 @@ public class allPrograms {
             cf.stringHashMap = stringID;
 
             //TODO - Delete
-            System.out.println("List without duplicates: " + distinctStr);
-            System.out.println("String bitmap range: " + cf.strBitmapRange);
-            System.out.println("Map of strings: " + stringID);
+            if(cf.type[columnNum].attrType == AttrType.attrString) {
+                System.out.println("List without duplicates: " + distinctStr);
+                System.out.println("String bitmap range: " + cf.strBitmapRange);
+                System.out.println("Map of strings: " + stringID);
+            }
+            else
+            {
+                System.out.println("Int Range: " + range);
+            }
 
             //Loop through each value in the array and call createBitMapIndex on it
             for (int i = 0; i < cf.heapfiles[columnNum].getRecCnt(); i++) {
@@ -425,36 +434,20 @@ public class allPrograms {
                     cf.createBitMapIndex(columnNum, valueS);
                 }
             }
-            /*
-            BitMapFile bmFile = cf.BMFiles[0];
-            PageId rootID = bmFile.getHeaderPage().get_rootId();
 
-            Page tmpPg = new Page();
-            try
+            if(GlobalDebug.debug)
             {
-                SystemDefs.JavabaseBM.pinPage(rootID, tmpPg, false);
+                BitMapFile tmpBMF = new BitMapFile("sd2_" + columnNum);
+                BitMapHeaderPage bmhp = tmpBMF.getHeaderPage();
+                RID tmpRID = new RID();
+                tmpRID = bmhp.firstRecord();
+                Tuple t = new Tuple();
+                do {
+                    t = bmhp.getRecord(tmpRID);
+                    byte[] data = t.getTupleByteArray();
+                    System.out.println("Data: " + Arrays.toString(data));
+                } while ((tmpRID = bmhp.nextRecord(tmpRID)) != null);
             }
-            catch (Exception e)
-            {
-                //TODO
-                System.out.println("allPrograms.java: Pin page failed");
-            }
-
-            BMPage tmpBMpage = new BMPage(tmpPg);
-            rootID = tmpBMpage.getNextPage();
-            try
-            {
-                SystemDefs.JavabaseBM.pinPage(rootID, tmpPg, false);
-                byte [] data = tmpBMpage.getBMpageArray();
-                System.out.println("Data found, length: " + data.length);
-                System.out.println(Arrays.toString(data));
-            }
-            catch (Exception e)
-            {
-                System.out.println("allPrograms.java: Pin page failed second time");
-            }
-
-             */
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -835,6 +828,7 @@ public class allPrograms {
             String operator = values[1];
             String value = values[2];
 
+
             if(Objects.equals(operator, "<"))
             {
                 valueConstraintExpr[0].op = new AttrOperator(AttrOperator.aopLT);
@@ -893,111 +887,58 @@ public class allPrograms {
             }
 
             //TODO
-            System.out.println(valueConstraintExpr[0].operand1.string + ", " + valueConstraintExpr[0].operand2.string);
-
-            // Open the bitmap file for the specified column
-            BitMapFile bitmapFile = new BitMapFile(columnarFileName + columnNum);
-
-            BMPage page = new BMPage();
-            PageId nextPageId = bitmapFile.getHeaderPage().getNextPage();
-            while (nextPageId.pid != INVALID_PAGE) {
-                page.setCurPage(nextPageId);
-
-                // Read the bitmap data directly from the page
-                byte[] bmPageData = page.getpage();
-
-                // Iterate over each bit in the bitmap page
-                for (int i = 0; i < bmPageData.length * 8; i++) {
-                    if ((bmPageData[i / 8] & (1 << (i % 8))) != 0) { // Check if the bit is set
-                        // Create a TID from the RID
-                        TID tid = new TID(targetColumnNames.length);
-                        tid.numRIDs = targetColumnNames.length;
-                        tid.recordIDs = new RID[targetColumnNames.length];
-                        for (int j = 0; j < targetColumnNames.length; j++) {
-                            RID rid = new RID(new PageId(page.getCurPage().pid), i);
-                            tid.recordIDs[j] = rid;
-                        }
-                        // Retrieve the tuple using the TID
-                        Tuple tuple = cf.getTuple(tid);
-                        System.out.println(tuple);
-                    }
-                }
-
-                nextPageId = page.getNextPage();
+            if(cf.type[columnNum].attrType == AttrType.attrString) {
+                System.out.println(valueConstraintExpr[0].operand1.string + ", " + valueConstraintExpr[0].operand2.string);
+            }
+            else{
+                System.out.println(valueConstraintExpr[0].operand1.string + ", " + valueConstraintExpr[0].operand2.integer);
             }
 
-            if(GlobalDebug.debug) {
-                BM bitmap = new BM();
-                BitMapFile tmpBMF = new BitMapFile("sd2_0");
-                int[] pos = new int[50];
-                int matches = 0;
-                PageId bmfRoot = tmpBMF.getHeaderPage().get_rootId();
 
-                System.out.println("bmfRoot: " + bmfRoot);
-                Page tmpPg = null;
-                do {
-                    try {
-                        tmpPg = new Page();
-                        SystemDefs.JavabaseBM.pinPage(bmfRoot, tmpPg, false);
-                    } catch (Exception e) {
-                        System.out.println("Exception while pinning page in all programs");
-                        break;
-                    }
-                    BMPage tmpBMPage = new BMPage(tmpPg);
-                    byte[] tmpData;
-                    tmpData = tmpBMPage.getBMpageArray();
-                    int count = tmpBMPage.getSlotCnt();
-                    int start = tmpBMPage.getStartByte();
+            BitMapFile tmpBMF = new BitMapFile("sd2_" + columnNum);
+            BitMapHeaderPage bmhp = tmpBMF.getHeaderPage();
+            RID tmpRID = new RID();
+            tmpRID = bmhp.firstRecord();
+            Tuple t = new Tuple();
 
-                    System.out.println("BMPSltCnt: " + tmpBMPage.getSlotCnt());
-                    int end = start + count;
-                    for (int i = start; i < end; i++) {
-                        if (tmpData[i] == 1) {
-                            pos[matches] = i;
-                            matches++;
-                        }
-                    }
-                    bmfRoot = tmpBMPage.getNextPage();
-                } while (bmfRoot.pid != INVALID_PAGE);
-
-                System.out.println("Matches:" + matches);
-
-
-                int size = matches;
-                int targetsize = 1;
-
-                for(int i = 0; i < size; i++)
+            int[] tupleMatchPos = new int[cf.heapfiles[columnNum].getRecCnt()];
+            for(int i = 0; i < tupleMatchPos.length; i++)
+            {
+                tupleMatchPos[i] = -1;
+            }
+            int recIndex = 0;
+            int tmpPos = 0;
+            do {
+                t = bmhp.getRecord(tmpRID);
+                byte[] data = t.getTupleByteArray();
+                if(cf.type[columnNum].attrType == AttrType.attrString)
                 {
-                    for(int j =0; j < targetsize; j++)
-                    {
-                        Scan scancol = cf.openColumnScan(0);
-                        RID tmpRid = new RID();
-                        Tuple tmpT = new Tuple();
-                        String colVal = "";
-                        int count = 0;
-
-                        while ((tmpT = scancol.getNext(tmpRid)) != null) {
-                            if(count < pos[i]){
-                                count++;
-                            }
-                            else {
-                                short[] fieldOffset = {0, 25, 50, 54};
-                                tmpT.setTuple_length(cf.tupleLength);
-                                tmpT.setFldCnt((short) cf.heapfiles.length);
-                                tmpT.setFldsOffset(fieldOffset);
-                                colVal = tmpT.getStrFld(1);
-                                System.out.println("colVal: " + colVal);
-                                System.out.println();
-                            }
-                        }
+                    int posValue = cf.stringHashMap.get(value);
+                    if (data.length == cf.stringHashMap.size() && data[posValue] == 1) {
+                        tupleMatchPos[tmpPos] = recIndex;
+                        tmpPos++;
                     }
-
                 }
+                else {
+                    if (data.length == cf.intBitmapRange && data[Integer.parseInt(value)] == 1) {
+                        tupleMatchPos[tmpPos] = recIndex;
+                        tmpPos++;
+                    }
+                }
+                recIndex++;
 
+            } while ((tmpRID = bmhp.nextRecord(tmpRID)) != null);
+            for(int i = 0; i < tupleMatchPos.length; i++)
+            {
+                if(tupleMatchPos[i] != -1)
+                {
+                    System.out.println("Match found; index: " + tupleMatchPos[i] + " for value: " + value);
+                }
             }
 
 
-            bitmapFile.close(); // Close the bitmap file after scanning
+
+            tmpBMF.close(); // Close the bitmap file after scanning
         } catch (Exception e) {
             e.printStackTrace();
         }

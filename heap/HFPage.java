@@ -166,19 +166,11 @@ public class HFPage extends Page
       usedPtr =  Convert.getShortValue (USED_PTR, data);
       freeSpace =  Convert.getShortValue (FREE_SPACE, data);
       slotCnt =  Convert.getShortValue (SLOT_CNT, data);
-      
-      System.out.println("dumpPage");
-      System.out.println("curPage= " + curPage.pid);
-      System.out.println("nextPage= " + nextPage.pid);
-      System.out.println("usedPtr= " + usedPtr);
-      System.out.println("freeSpace= " + freeSpace);
-      System.out.println("slotCnt= " + slotCnt);
+
       
       for (i= 0, n=DPFIXED; i < slotCnt; n +=SIZE_OF_SLOT, i++) {
         length =  Convert.getShortValue (n, data);
 	offset =  Convert.getShortValue (n+2, data);
-	System.out.println("slotNo " + i +" offset= " + offset);
-        System.out.println("slotNo " + i +" length= " + length);
       }
       
     }
@@ -291,8 +283,6 @@ public class HFPage extends Page
     throws IOException
     {
       slotCnt =  Convert.getShortValue (SLOT_CNT, data);
-      //TODO
-        System.out.println("HFPage.java getSlotCnt() - Slot Count used: " + slotCnt);
       return slotCnt;
     }
   
@@ -309,9 +299,6 @@ public class HFPage extends Page
       int position = DPFIXED + slotno * SIZE_OF_SLOT;
       Convert.setShortValue((short)length, position, data);
       Convert.setShortValue((short)offset, position+2, data);
-
-      //TODO
-        System.out.println("HFPage.java setSlot() - Set slot " + slotno + " contents with: " + Arrays.toString(data));
     }
 
   
@@ -325,9 +312,6 @@ public class HFPage extends Page
     {
       int position = DPFIXED + slotno * SIZE_OF_SLOT;
       short val= Convert.getShortValue(position, data);
-
-      //TODO
-        System.out.println("HFPage.java getSlotLength() - Length of record in slot " + slotno + ": " + val);
 
       return val;
     }

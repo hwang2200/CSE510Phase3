@@ -51,7 +51,6 @@ public class Columnarfile {
             String heapName = this.name + "COL.columnid" + i;
             heapfiles[i] = new Heapfile(heapName);
             heapFileNames[i] = heapName;
-            System.out.println("HeapFile[" + i + "] name: " + heapName);
         }
 
         // Initialize the metadata file
@@ -250,9 +249,7 @@ public class Columnarfile {
                 KeyDataEntry tmpKDE = btscan.get_next();
                 while (tmpKDE != null) {
                     LeafData tmpData = (LeafData) tmpKDE.data;
-                    System.out.println("LeafData: " + tmpData);
                     RID tmpRid = tmpData.getData();
-                    System.out.println("RID: " + tmpRid);
                     tmpKDE = btscan.get_next();
                 }
 
@@ -273,12 +270,10 @@ public class Columnarfile {
 
             if(SystemDefs.JavabaseDB.get_file_entry(filename) != null)
             {
-                System.out.println("BitmapFile already exists: " + filename);
                 bitmapFile = new BitMapFile(filename);
             }
             else
             {
-                System.out.println("Creating new BitmapFile: " + filename);
                 bitmapFile = new BitMapFile(filename, this, columnNo, value);
 
             }
