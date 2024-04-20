@@ -12,10 +12,7 @@ import btree.*;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class Columnarfile {
     public String name;
@@ -32,7 +29,8 @@ public class Columnarfile {
     public ColumnarFileMetadata columnarFileMetadata;
     public int intBitmapRange;
     public int strBitmapRange;
-
+    public int intCBitmapRange;
+    public int strCBitmapRange;
     public BTreeFile[] bTreeFiles;
     public Map<String, Integer> stringHashMap;
 
@@ -275,7 +273,6 @@ public class Columnarfile {
             else
             {
                 bitmapFile = new BitMapFile(filename, this, columnNo, value);
-
             }
 
             if(value instanceof IntegerValueClass)
@@ -305,7 +302,92 @@ public class Columnarfile {
                 bitmapFile.Insert(position, strBitmapRange);
             }
 
+            //TODO
+            //BTreeFile tmpB = new BTreeFile(filename);
+            this.BMFiles[columnNo] = bitmapFile;
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
+    public boolean createCBitMapIndex(int columnNo, ValueClass value) {
+        try {
+            BitMapFile bitmapFile;
+            String filename = "C" + this.name + "_" + columnNo;
+
+            if(SystemDefs.JavabaseDB.get_file_entry(filename) != null)
+            {
+                bitmapFile = new BitMapFile(filename);
+            }
+            else
+            {
+                bitmapFile = new BitMapFile(filename, this, columnNo, value);
+            }
+
+            List<int[]> uncompressedArrays = new ArrayList<>();
+            StringValueClass valueS = new StringValueClass();
+
+            if(value instanceof IntegerValueClass)
+            {
+                //New function CInsert (insert value one at a time)
+                bitmapFile.CInsert(((IntegerValueClass) value).getValue());
+            }
+            else if(value instanceof StringValueClass)
+            {
+                int[] uncompressed = new int[strBitmapRange];
+                int position = 0;
+                RID rid = new RID();
+                Scan s = heapfiles[columnNo].openScan();
+                Tuple tuple = s.getNext(rid);
+
+                while(tuple != null) {
+                    byte[] strByteArray = tuple.returnTupleByteArray();
+                    String strData = Convert.getStrValue(0, strByteArray, 25);
+                    //Find which string it is in the dictionary
+                    if (strData.equals(((StringValueClass) value).getValue())) {
+                        position = stringHashMap.get(strData);
+                        break;
+                    }
+                    tuple = s.getNext(rid);
+                }
+                uncompressed[position] = 1;
+                uncompressedArrays.add(uncompressed);
+
+                for(int[] array : uncompressedArrays)
+                {
+                    int leadingZeros = 0;
+                    int trailingZeros = 0;
+
+                    for(int i = 0; i < array.length; i++) {
+                        if(array[i] == 0) {
+                            leadingZeros += 1;
+                        } else if (array[i] == 1) {
+                            break;
+                        }
+                    }
+
+                    for(int i = array.length - 1; i >= 0; i--) {
+                        if(array[i] == 0) {
+                            trailingZeros += 1;
+                        } else if (array[i] == 1) {
+                            break;
+                        }
+                    }
+
+                    //Each even index will have count, each odd index will have value
+                    int[] CBitmap = {leadingZeros, 0, 1, 1, trailingZeros, 0};
+                    strCBitmapRange = 6; //[leadingZeros, 0, 1, 1, trailingZeros, 0]
+                    //TODO
+                    System.out.println("For " + Arrays.toString(array) + ": " + leadingZeros + ", " + trailingZeros);
+                    System.out.println("CBitmap for strings: " + Arrays.toString(CBitmap));
+                    for(int i = 0; i < CBitmap.length; i++)
+                    {
+                        bitmapFile.CInsert(CBitmap[i]);
+                    }
+                }
+            }
 
             //TODO
             //BTreeFile tmpB = new BTreeFile(filename);

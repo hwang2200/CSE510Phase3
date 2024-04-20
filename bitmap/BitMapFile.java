@@ -201,6 +201,18 @@ public class BitMapFile
 		}
 	}
 
+	public boolean CInsert(int value)
+	{
+		//Length of bitmap array will always be 6
+		//Should insert the value passed into the array one at a time
+		try {
+
+			return true;
+		} catch(Exception e){
+			return false;
+		}
+	}
+
 	public boolean Insert(int position, int bitmapRange)
 			throws IOException {
 		try {

@@ -105,7 +105,7 @@ public class allPrograms {
                     System.out.println("Please enter in the Target Column Name: ");
                     columnName = scanner.nextLine();
 
-                    System.out.println("Please enter in the Index Type (\"BTREE\", or \"BITMAP\"): ");
+                    System.out.println("Please enter in the Index Type (\"BTREE\", \"BITMAP\", or \"CBITMAP\"): ");
                     indexType = scanner.nextLine();
 
                     queryArgs = new String[]{colDBName, columnarFileName, columnName, indexType};
@@ -306,6 +306,8 @@ public class allPrograms {
                 createBTree(cf, columnarfileName, columnName);
             } else if (indexType.equals("BITMAP")) {
                 createBitMap(cf, columnarfileName, columnName);
+            } else if (indexType.equals("CBITMAP")) {
+                createCBitMap(cf, columnarfileName, columnName);
             } else {
                 System.out.println("Usage: INDEXTYPE = BTREE or BITMAP");
                 System.exit(1);
@@ -410,7 +412,7 @@ public class allPrograms {
             for (int i = 0; i < distinctStr.size(); i++) {
                 stringID.put(distinctStr.get(i), i);
             }
-            cf.strBitmapRange = distinctStr.size(); //14
+            cf.strBitmapRange = distinctStr.size();
             cf.stringHashMap = stringID;
 
             //TODO - Delete
@@ -452,7 +454,146 @@ public class allPrograms {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
 
+    public static void createCBitMap(Columnarfile cf, String columnarfileName, String columnName)
+    {
+        try {
+            ColumnarFileMetadata columnarMetadata = cf.getColumnarFileMetadata();
+            cf.columnNames = columnarMetadata.columnNames;
+
+            int columnNum = -1;
+            IntegerValueClass valueI = new IntegerValueClass();
+            StringValueClass valueS = new StringValueClass();
+
+            //Loops through all columns
+            for (int i = 0; i < cf.columnNames.length; i++) {
+                if (cf.columnNames[i].equals(columnName)) {
+                    columnNum = i;
+                }
+            }
+            if (columnNum == -1) {
+                System.out.println("Column not found for createBitMap function");
+                return;
+            }
+
+            //Loops through records in a heapfile
+            RID rid = new RID();
+            Scan s = cf.heapfiles[columnNum].openScan();
+            Tuple tuple = s.getNext(rid);
+
+            //Find range to create bitmap for each value1
+            int maxValue = Integer.MIN_VALUE;
+            int minValue = Integer.MAX_VALUE;
+            ArrayList<Integer> intValuesList = new ArrayList<>();
+            ArrayList<String> strValuesList = new ArrayList<>();
+
+            //Add value to array
+            while (tuple != null) {
+                if (cf.type[columnNum].attrType == AttrType.attrInteger) {
+                    int value = Convert.getIntValue(0, tuple.getTupleByteArray());
+                    intValuesList.add(value);
+                } else if (cf.type[columnNum].attrType == AttrType.attrString) {
+                    String value = Convert.getStrValue(0, tuple.getTupleByteArray(), 25);
+                    strValuesList.add(value);
+                }
+                tuple = s.getNext(rid);
+            }
+
+            //String
+            String[] strValArray = strValuesList.toArray(new String[0]);
+            Set<String> set = new HashSet<>(strValuesList);
+            List<String> distinctStr = new ArrayList<>(set);
+            Map<String, Integer> stringID = new HashMap<>();
+            for (int i = 0; i < distinctStr.size(); i++) {
+                stringID.put(distinctStr.get(i), i);
+            }
+            cf.strBitmapRange = distinctStr.size();
+            cf.stringHashMap = stringID;
+
+            //Int range
+            Integer[] intValArray = intValuesList.toArray(new Integer[0]);
+            for (int val : intValArray) {
+                minValue = Math.min(minValue, val);
+                maxValue = Math.max(maxValue, val);
+            }
+            int range = maxValue - minValue + 1;
+
+            //All uncompressed int data arrays
+            List<int[]> uncompressedIntArrays = new ArrayList<>();
+
+            //Create
+            if(cf.type[columnNum].attrType == AttrType.attrInteger) {
+                for (int i = 0; i < intValArray.length; i++) {
+                    int[] uncompressed = new int[range];
+                    int pos = intValArray[i];
+                    uncompressed[pos] = 1;
+                    uncompressedIntArrays.add(uncompressed);
+                }
+            }
+
+            if(cf.type[columnNum].attrType == AttrType.attrInteger)
+            {
+                //Find number of leading and trailing zeros to aid in compression
+                for(int[] array : uncompressedIntArrays)
+                {
+                    int leadingZeros = 0;
+                    int trailingZeros = 0;
+
+                    for(int i = 0; i < array.length; i++) {
+                        if(array[i] == 0) {
+                            leadingZeros += 1;
+                        } else if (array[i] == 1) {
+                            break;
+                        }
+                    }
+
+                    for(int i = array.length - 1; i >= 0; i--) {
+                        if(array[i] == 0) {
+                            trailingZeros += 1;
+                        } else if (array[i] == 1) {
+                            break;
+                        }
+                    }
+
+                    //Each even index will have count, each odd index will have value
+                    int[] CBitmap = {leadingZeros, 0, 1, 1, trailingZeros, 0};
+                    cf.intCBitmapRange = 6; //[leadingZeros, 0, 1, 1, trailingZeros, 0]
+
+                    //TODO
+                    System.out.println("For " + Arrays.toString(array) + ": " + leadingZeros + ", " + trailingZeros);
+                    System.out.println("CBitmap for ints: " + Arrays.toString(CBitmap));
+
+                    for(int i = 0; i < CBitmap.length; i++)
+                    {
+                        valueI.setValue(CBitmap[i]);
+                        cf.createCBitMapIndex(columnNum, valueI);
+                    }
+                }
+            } else if(cf.type[columnNum].attrType == AttrType.attrString) {
+                for(int i = 0; i < strValArray.length; i++)
+                {
+                    valueS.setValue(strValArray[i]);
+                    cf.createCBitMapIndex(columnNum, valueS);
+                }
+            }
+
+            if(GlobalDebug.debug)
+            {
+                BitMapFile tmpBMF = new BitMapFile("sd2_" + columnNum);
+                BitMapHeaderPage bmhp = tmpBMF.getHeaderPage();
+                RID tmpRID = new RID();
+                tmpRID = bmhp.firstRecord();
+                Tuple t = new Tuple();
+                do {
+                    t = bmhp.getRecord(tmpRID);
+                    byte[] data = t.getTupleByteArray();
+                    System.out.println("Data: " + Arrays.toString(data));
+                } while ((tmpRID = bmhp.nextRecord(tmpRID)) != null);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void Query(String[] args, Columnarfile cf) throws UnknownKeyTypeException, InvalidTupleSizeException, InvalidTypeException {
