@@ -273,10 +273,18 @@ public class Columnarfile {
             catch(Exception e)
             {
                 System.out.println("get file entry failed");
+                return false;
             }
             if(pid != null)
             {
-                bitmapFile = new BitMapFile(filename);
+                try {
+                    bitmapFile = new BitMapFile(filename);
+                }
+                catch (Exception e)
+                {
+                    System.out.println("PID: " + pid + " failed to be retrieved");
+                    return false;
+                }
             }
             else
             {

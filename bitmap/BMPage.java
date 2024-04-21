@@ -4,6 +4,8 @@ import java.io.*;
 
 import global.*;
 import diskmgr.*;
+import heap.InvalidSlotNumberException;
+import heap.Tuple;
 
 interface ConstSlot{
     int INVALID_SLOT =  -1;
@@ -342,4 +344,118 @@ public class BMPage extends Page
 
     public int getStartByte()
     {return this.DPFIXED;}
+
+    /**
+     * @return RID of first record on page, null if page contains no records.
+     * @exception  IOException I/O errors
+     * in C++ Status firstRecord(RID& firstRid)
+     *
+     */
+    public RID firstRecord()
+            throws IOException
+    {
+        RID rid = new RID();
+        // find the first non-empty slot
+
+
+        slotCnt = Convert.getShortValue (SLOT_CNT, data);
+
+        int i;
+        short length;
+        for (i= 0; i < slotCnt; i++)
+        {
+            length = getSlotLength (i);
+            if (length != EMPTY_SLOT)
+                break;
+        }
+
+        if(i== slotCnt)
+            return null;
+
+        // found a non-empty slot
+
+        rid.slotNo = i;
+        curPage.pid= Convert.getIntValue(CUR_PAGE, data);
+        rid.pageNo.pid = curPage.pid;
+
+        return rid;
+    }
+
+    /**
+     * @return RID of next record on the page, null if no more
+     * records exist on the page
+     * @param 	curRid	current record ID
+     * @exception  IOException I/O errors
+     * in C++ Status nextRecord (RID curRid, RID& nextRid)
+     */
+    public RID nextRecord (RID curRid)
+            throws IOException
+    {
+        RID rid = new RID();
+        slotCnt = Convert.getShortValue (SLOT_CNT, data);
+
+        int i=curRid.slotNo;
+        short length;
+
+        // find the next non-empty slot
+        for (i++; i < slotCnt;  i++)
+        {
+            length = getSlotLength(i);
+            if (length != EMPTY_SLOT)
+                break;
+        }
+
+        if(i >= slotCnt)
+            return null;
+
+        // found a non-empty slot
+
+        rid.slotNo = i;
+        curPage.pid = Convert.getIntValue(CUR_PAGE, data);
+        rid.pageNo.pid = curPage.pid;
+
+        return rid;
+    }
+
+    public Tuple getRecord ( RID rid )
+            throws IOException,
+            InvalidSlotNumberException
+    {
+        short recLen;
+        short offset;
+        byte []record;
+        PageId pageNo = new PageId();
+        pageNo.pid= rid.pageNo.pid;
+        curPage.pid = Convert.getIntValue (CUR_PAGE, data);
+        int slotNo = rid.slotNo;
+
+        // length of record being returned
+        recLen = getSlotLength (slotNo);
+        slotCnt = Convert.getShortValue (SLOT_CNT, data);
+
+        if (( slotNo >=0) && (slotNo < slotCnt) && (recLen >0)
+                && (pageNo.pid == curPage.pid))
+        {
+            offset = getSlotOffset (slotNo);
+            record = new byte[recLen];
+            System.arraycopy(data, offset, record, 0, recLen);
+            Tuple tuple = new Tuple(record, 0, recLen);
+            return tuple;
+        }
+
+        else {
+            throw new InvalidSlotNumberException (null, "HEAPFILE: INVALID_SLOTNO");
+        }
+
+
+    }
+
+    public short getSlotOffset(int slotno)
+            throws IOException
+    {
+        int position = DPFIXED + slotno * SIZE_OF_SLOT;
+        short val= Convert.getShortValue(position +2, data);
+        return val;
+    }
+
 }

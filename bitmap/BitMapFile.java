@@ -7,13 +7,11 @@ import java.util.Arrays;
 import java.util.List;
 
 import bufmgr.*;
+import diskmgr.PCounter;
 import diskmgr.Page;
 import global.*;
 import columnar.*;
-import heap.HFBufMgrException;
-import heap.HFDiskMgrException;
-import heap.InvalidSlotNumberException;
-import heap.InvalidTupleSizeException;
+import heap.*;
 import value.*;
 
 public class BitMapFile
@@ -32,10 +30,14 @@ public class BitMapFile
 			throws GetFileEntryException,
 			ConstructPageException, IOException {
 
-
 		headerPageId = get_file_entry(filename);
 		headerPage = new BitMapHeaderPage(headerPageId);
 		bmfilename = filename;
+
+		if(headerPage.firstPID == -1)
+		{
+			headerPage.firstPID = headerPageId.pid;
+		}
 	}
 
 	public BitMapFile(String filename, Columnarfile columnarFile, int ColumnNo, ValueClass value)
@@ -58,6 +60,10 @@ public class BitMapFile
 		else
 		{
 			headerPage = new BitMapHeaderPage(headerPageId);
+		}
+		if(headerPage.firstPID == -1)
+		{
+			headerPage.firstPID = headerPageId.pid;
 		}
 
 		bmfilename = filename;
@@ -231,7 +237,7 @@ public class BitMapFile
 					return false;
 				}
 
-				if ((key == 0 && page.available_space() >= 2) || (key == 1 && page.available_space() >= 4)) {
+				if ((key == 0 && page.available_space() >= (bitmapRange + 4)) || (key == 1 && page.available_space() >= (bitmapRange + 4))) {
 					// Page exists with space
 					page.writeBMPageArray(data);
 				}
@@ -263,47 +269,68 @@ public class BitMapFile
 					System.err.println("Key value invalid on bitmap insert: " + key);
 					return false;
 				}
-				//TODO print bitmap array
 
-				PageId pid = headerPage.get_rootId();
+				PageId p = headerPage.get_rootId();
+				//apage = headerPage.set_rootId(pid);
 				Page pg1 = null;
-				pg1 = pinPage(pid);
+				try {
+					pg1 = pinPage(p);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+                assert pg1 != null;
+                BMPage page = new BMPage(pg1);
+				page.setNextPage(new PageId(INVALID_PAGE));
 
-				BMPage bmpage = new BMPage(pg1);
-				bmpage.setNextPage(new PageId(INVALID_PAGE));
 
-				if ((key == 0 && bmpage.available_space() >= 2) || (key == 1 && bmpage.available_space() >= 4)) {
+
+				//System.out.println("PageID: " + page.getCurPage().pid + " space: " + page.available_space());
+				if ((key == 0 && page.available_space() >= (bitmapRange + 4)) || (key == 1 && page.available_space() >= (bitmapRange + 4))) {
 					// Page exists with space
-					bmpage.writeBMPageArray(data);
+					page.writeBMPageArray(data);
+
 				}
 				else {
 					//not enough space, need to create new page
-					PageId newPage = new PageId();
-					BMPage bmPage = new BMPage();
-					newPage = new PageId();
-					bmPage.setNextPage(newPage);
-					bmPage.setCurPage(newPage);
-					bmPage.setPrevPage(newPage);
-					Page page = null;
-					page = pinPage(newPage);
-					BMPage pg2 = new BMPage(page);
-					bmPage.setNextPage(new PageId(INVALID_PAGE));
-					if ((key == 0 && bmPage.available_space() >= 2) || (key == 1 && bmPage.available_space() >= 4)) {
-						// Page exists with space
-						bmpage.writeBMPageArray(data);
-
+					PageId newPageId = new PageId();
+					BMPage newBMPage = new BMPage();
+					try{
+						Page apage=new Page();
+						PageId pageId=SystemDefs.JavabaseBM.newPage(apage,1);
+						if (pageId==null)
+							throw new ConstructPageException(null, "construct new page failed");
+						newBMPage.init(pageId, apage);
 					}
-				}
+					catch (Exception e) {
+						e.printStackTrace();
+						throw new ConstructPageException(e, "construct sorted page failed");
+					}
+					newBMPage.setPrevPage(page.getCurPage());
+					newPageId = newBMPage.getCurPage();
+					page.setNextPage(newBMPage.getCurPage());
+					newBMPage.setNextPage(new PageId(INVALID_PAGE));
 
-				try {
-					unpinPage(headerPage.get_rootId());
+					System.out.println("New Page created");
+					System.out.println("Prev Page: " + newBMPage.getPrevPage());
+					System.out.println("Curr Page: " + newBMPage.getCurPage());
+					System.out.println("Next Page: " + newBMPage.getNextPage());
+					System.out.println();
+
+					if ((key == 0 && newBMPage.available_space() >= (bitmapRange + 4)) || (key == 1 && newBMPage.available_space() >= (bitmapRange + 4))) {
+						// Page exists with space
+						newBMPage.writeBMPageArray(data);
+					}
+
+					unpinPage(newPageId, true);
+					updateHeader(newPageId);
 				}
-				catch (Exception e)
-				{
-					System.out.println("Failed to unpin pageID: " + headerPage.get_rootId());
+				try {
+					unpinPage(p);
+				}
+				catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
-
 
 			return true;
 		} catch (Exception e) {
@@ -461,6 +488,90 @@ public class BitMapFile
 		// ASSERTIONS:
 		// - headerPage, headerPageId valid, pinned and marked as dirty
 
+	}
+
+
+	@Override
+	public String toString()
+	{
+		int count = 0;
+		BitMapFile tmpBMF = null;
+		try {
+			tmpBMF = new BitMapFile(this.bmfilename);
+		} catch (GetFileEntryException | ConstructPageException | IOException e) {
+			throw new RuntimeException(e);
+		}
+		PageId firstPage = new PageId(tmpBMF.getHeaderPage().firstPID + 1);
+		Page pg1 = null;
+		try
+		{
+			pg1 = pinPage(firstPage);
+		} catch (btree.PinPageException e) {
+            throw new RuntimeException(e);
+        }
+
+		do {
+			BMPage bmpage = new BMPage(pg1);
+			try {
+				System.out.println("BMPage: " + bmpage.getCurPage().pid);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			try {
+				System.out.println("Next BMPage: " + bmpage.getNextPage().pid);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			RID tmpRID = new RID();
+			try {
+				tmpRID = bmpage.firstRecord();
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			Tuple t = new Tuple();
+
+			do {
+				try {
+					t = bmpage.getRecord(tmpRID);
+				} catch (IOException | InvalidSlotNumberException e) {
+					throw new RuntimeException(e);
+				}
+                byte[] data = t.getTupleByteArray();
+				System.out.println("Data[" + count + "]: " + Arrays.toString(data));
+				count++;
+				try {
+					tmpRID = bmpage.nextRecord(tmpRID);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			} while (tmpRID  != null);
+
+			try {
+				bmpage.setCurPage(bmpage.getNextPage());
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			try {
+				if(bmpage.getCurPage().pid == INVALID_PAGE) { break; }
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			try {
+				pg1 = pinPage(bmpage.getCurPage());
+			}
+			catch (Exception e)
+			{
+				throw new RuntimeException(e);
+			}
+
+			if(count > 2000)
+			{
+				break;
+			}
+		}while(true);
+
+
+		return "";
 	}
 
 }

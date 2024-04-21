@@ -8,6 +8,8 @@ import global.*;
 import heap.*;
 
 public class BitMapHeaderPage extends HFPage {
+
+    public int firstPID = -1;
     public BitMapHeaderPage() throws ConstructPageException {
         super();
         try {

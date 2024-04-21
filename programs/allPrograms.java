@@ -69,7 +69,7 @@ public class allPrograms {
                     //System.out.println("Please enter in a query in the format: DATAFILENAME COLUMNDBNAME COLUMNARFILENAME NUMCOLUMNS");
 
                     System.out.println("Please enter in the name of the Data File: ");
-                    dataFileName = "sd2";//scanner.nextLine();
+                    dataFileName = "sd3"; //"sd2";//scanner.nextLine();
 
                     System.out.println("Please enter in the name of the Column DB: ");
                     colDBName = "sd2";//scanner.nextLine();
@@ -103,7 +103,7 @@ public class allPrograms {
                     System.out.println("Please enter in the Target Column Name: ");
                     columnName = scanner.nextLine();
 
-                    System.out.println("Please enter in the Index Type (\"BTREE\", \"BITMAP\", or \"CBITMAP\"): ");
+                    System.out.println("Please enter in the Index Type (\"BITMAP\", or \"CBITMAP\"): ");
                     indexType = scanner.nextLine();
 
                     queryArgs = new String[]{colDBName, columnarFileName, columnName, indexType};
@@ -130,7 +130,7 @@ public class allPrograms {
                     System.out.println("Please enter in the number of buffers: ");
                     numBuf = "1"; //scanner.nextLine();
 
-                    System.out.println("Please enter in the access type (\"FILESCAN\", \"COLUMNSCAN\", \"BTREE\", or \"BITMAP\": ");
+                    System.out.println("Please enter in the access type (\"BITMAP\", or \"CBITMAP\"): ");
                     accessType = "BITMAP"; //scanner.nextLine();
 
                     queryArgs = new String[]{colDBName, columnarFileName, columnName, valueConstraint, numBuf, accessType};
@@ -154,11 +154,11 @@ public class allPrograms {
                     System.out.println("Please enter in the number of buffers: ");
                     numBuf = scanner.nextLine();
 
-                    System.out.println("Please enter in the access type (\"FILESCAN\", \"COLUMNSCAN\", \"BTREE\", or \"BITMAP\": ");
+                    System.out.println("Please enter in the access type (\"BITMAP\", or \"CBITMAP\"): ");
                     accessType = scanner.nextLine();
 
                     queryArgs = new String[]{colDBName, columnarFileName, columnName, valueConstraint, numBuf, accessType};
-                    deleteQuery(queryArgs);
+                    deleteQuery(queryArgs, columnarFile);
                     break;
                 case "5":
                     System.out.println("Quitting...");
@@ -266,9 +266,11 @@ public class allPrograms {
                 tid.recordIDs[i] = new RID();
             }
             System.out.println();
+            int count = 0;
             while((tuple = tscan.getNext(tid)) != null)
             {
-                System.out.println("Record Inserted:");
+                count++;
+                System.out.print("Record[" + count + "]  Inserted: ");
                 tuple.print(columnTypes);
                 System.out.println();
             }
@@ -300,14 +302,12 @@ public class allPrograms {
 
         try {
 
-            if (indexType.equals("BTREE")) {
-                createBTree(cf, columnarfileName, columnName);
-            } else if (indexType.equals("BITMAP")) {
+            if (indexType.equals("BITMAP")) {
                 createBitMap(cf, columnarfileName, columnName);
             } else if (indexType.equals("CBITMAP")) {
                 createCBitMap(cf, columnarfileName, columnName);
             } else {
-                System.out.println("Usage: INDEXTYPE = BTREE or BITMAP");
+                System.out.println("Usage: INDEXTYPE = \"BITMAP\", or \"CBITMAP\"");
                 System.exit(1);
             }
 
@@ -437,16 +437,7 @@ public class allPrograms {
 
             if(GlobalDebug.debug)
             {
-                BitMapFile tmpBMF = new BitMapFile("sd2_" + columnNum);
-                BitMapHeaderPage bmhp = new BitMapHeaderPage(tmpBMF.getHeaderPage().get_rootId());
-                RID tmpRID = new RID();
-                tmpRID = bmhp.firstRecord();
-                Tuple t = new Tuple();
-                do {
-                    t = bmhp.getRecord(tmpRID);
-                    byte[] data = t.getTupleByteArray();
-                    System.out.println("Data: " + Arrays.toString(data));
-                } while ((tmpRID = bmhp.nextRecord(tmpRID)) != null);
+               cf.BMFiles[columnNum].toString();
             }
 
         } catch (Exception e) {
