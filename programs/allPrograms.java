@@ -438,7 +438,7 @@ public class allPrograms {
             if(GlobalDebug.debug)
             {
                 BitMapFile tmpBMF = new BitMapFile("sd2_" + columnNum);
-                BitMapHeaderPage bmhp = tmpBMF.getHeaderPage();
+                BitMapHeaderPage bmhp = new BitMapHeaderPage(tmpBMF.getHeaderPage().get_rootId());
                 RID tmpRID = new RID();
                 tmpRID = bmhp.firstRecord();
                 Tuple t = new Tuple();

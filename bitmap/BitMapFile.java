@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import bufmgr.*;
+import diskmgr.Page;
 import global.*;
 import columnar.*;
 import heap.HFBufMgrException;
@@ -32,12 +33,9 @@ public class BitMapFile
 			ConstructPageException, IOException {
 
 
-
 		headerPageId = get_file_entry(filename);
 		headerPage = new BitMapHeaderPage(headerPageId);
 		bmfilename = filename;
-
-
 	}
 
 	public BitMapFile(String filename, Columnarfile columnarFile, int ColumnNo, ValueClass value)
@@ -56,32 +54,21 @@ public class BitMapFile
 			headerPage.set_magic0(MAGIC0);
 			headerPage.set_colNum(ColumnNo);
 			headerPage.set_rootId(new PageId(INVALID_PAGE));
-			bmfilename = filename;
-
-			// Sets the header key for the value type
-			if (value instanceof IntegerValueClass)
-			{
-				headerPage.set_keyType((short) 0);
-			}
-			else if (value instanceof StringValueClass)
-			{
-				headerPage.set_keyType((short) 1);
-			}
 		}
 		else
 		{
 			headerPage = new BitMapHeaderPage(headerPageId);
-			bmfilename = filename;
+		}
 
-			// Sets the header key for the value type
-			if (value instanceof IntegerValueClass)
-			{
-				headerPage.set_keyType((short) 0);
-			}
-			else if (value instanceof StringValueClass)
-			{
-				headerPage.set_keyType((short) 1);
-			}
+		bmfilename = filename;
+		// Sets the header key for the value type
+		if (value instanceof IntegerValueClass)
+		{
+			headerPage.set_keyType((short) 0);
+		}
+		else if (value instanceof StringValueClass)
+		{
+			headerPage.set_keyType((short) 1);
 		}
 
 
@@ -206,52 +193,43 @@ public class BitMapFile
 		try {
 			int key = headerPage.get_keyType();
 
-			BMPage page = new BMPage();
-			PageId apage = new PageId();
+
+
 
 			//if no header page, need to create new one
 			if(headerPage.get_rootId().pid == INVALID_PAGE)
 			{
 				//Create new page and page structure
-				page.setNextPage(new PageId(INVALID_PAGE));
-				headerPage.set_rootId(page.getCurPage());
-
-
-				page = new BMPage(headerPage);
-				this.headerPageId = page.getCurPage();
-
+				PageId newPageID = new PageId();
+				BMPage page = new BMPage();
+				try{
+					Page apage=new Page();
+					PageId pageId=SystemDefs.JavabaseBM.newPage(apage,1);
+					if (pageId==null)
+						throw new ConstructPageException(null, "construct new page failed");
+					page.init(pageId, apage);
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+					throw new ConstructPageException(e, "construct sorted page failed");
+				}
 				page.setNextPage(new PageId(INVALID_PAGE));
 				page.setPrevPage(new PageId(INVALID_PAGE));
-
-				PageId nextpageno = headerPage.getNextPage();
-
-				while (nextpageno.pid != INVALID_PAGE)
-				{
-					page.setCurPage(nextpageno);
-					nextpageno = page.getNextPage();
-				}
+				newPageID = page.getCurPage();
+				headerPage.set_rootId(page.getCurPage());
 
 				//Prepare data to add
 				byte[] data;
 
 				if (key == 0 || key == 1) {
 					data = new byte[bitmapRange];
-					//TODO
-					//System.out.println("Page doesn't exist");
-					//System.out.println("Byte index: " + byteIndex);
-					//System.out.println("Bit index: " + bitIndex);
-
 					data[position] = 1;
 				}
 				else
 				{
-					data = new byte[4];
-					// TODO: Modify headerpage so it stores information about how to insert using
-
+					System.err.println("Key value invalid on bitmap insert: " + key);
+					return false;
 				}
-
-				//TODO
-				//System.out.println(Arrays.toString(data));
 
 				if ((key == 0 && page.available_space() >= 2) || (key == 1 && page.available_space() >= 4)) {
 					// Page exists with space
@@ -263,10 +241,13 @@ public class BitMapFile
 					//Right after the key becomes 14, reaches here
 
 					BMPage newpage = new BMPage();
-					page.setNextPage(newpage.getCurPage());
-					newpage.setPrevPage(page.getCurPage());
+					page.setNextPage(new PageId(INVALID_PAGE));
+					headerPage.set_rootId(page.getCurPage());
+					newpage.setPrevPage(newPageID);
 					newpage.writeBMPageArray(data);
 				}
+				unpinPage(newPageID, true);
+				updateHeader(newPageID);
 
 			}
 			//header page exists (simply insert the record)
@@ -275,24 +256,52 @@ public class BitMapFile
 				byte[] data;
 				if (key == 0 || key == 1) {
 					data = new byte[bitmapRange];
-
-					//TODO
-					//System.out.println("Page does exist");
-					//System.out.println("Byte index: " + byteIndex);
-					//System.out.println("Bit index: " + bitIndex);
-
 					data[position] = 1;
 				}
 				else
 				{
-					data = new byte[4];
-					// TODO: Modify headerpage so it stores information about how to insert using
-
+					System.err.println("Key value invalid on bitmap insert: " + key);
+					return false;
 				}
 				//TODO print bitmap array
 
-				page.writeBMPageArray(data);
+				PageId pid = headerPage.get_rootId();
+				Page pg1 = null;
+				pg1 = pinPage(pid);
 
+				BMPage bmpage = new BMPage(pg1);
+				bmpage.setNextPage(new PageId(INVALID_PAGE));
+
+				if ((key == 0 && bmpage.available_space() >= 2) || (key == 1 && bmpage.available_space() >= 4)) {
+					// Page exists with space
+					bmpage.writeBMPageArray(data);
+				}
+				else {
+					//not enough space, need to create new page
+					PageId newPage = new PageId();
+					BMPage bmPage = new BMPage();
+					newPage = new PageId();
+					bmPage.setNextPage(newPage);
+					bmPage.setCurPage(newPage);
+					bmPage.setPrevPage(newPage);
+					Page page = null;
+					page = pinPage(newPage);
+					BMPage pg2 = new BMPage(page);
+					bmPage.setNextPage(new PageId(INVALID_PAGE));
+					if ((key == 0 && bmPage.available_space() >= 2) || (key == 1 && bmPage.available_space() >= 4)) {
+						// Page exists with space
+						bmpage.writeBMPageArray(data);
+
+					}
+				}
+
+				try {
+					unpinPage(headerPage.get_rootId());
+				}
+				catch (Exception e)
+				{
+					System.out.println("Failed to unpin pageID: " + headerPage.get_rootId());
+				}
 			}
 
 
@@ -366,9 +375,7 @@ public class BitMapFile
 	private PageId get_file_entry(String filename)
 			throws GetFileEntryException {
 		try {
-
-			PageId result = SystemDefs.JavabaseDB.get_file_entry(filename);
-			return result;
+			return SystemDefs.JavabaseDB.get_file_entry(filename);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new GetFileEntryException(e, "");
@@ -385,13 +392,41 @@ public class BitMapFile
 		}
 	}
 
-	private void unpinPage(PageId pageno)
-			throws UnpinPageException {
+	private Page pinPage(PageId pageno)
+			throws btree.PinPageException
+	{
 		try {
-			SystemDefs.JavabaseBM.unpinPage(pageno, false);
-		} catch (Exception e) {
+			Page page=new Page();
+			SystemDefs.JavabaseBM.pinPage(pageno, page, false/*Rdisk*/);
+			return page;
+		}
+		catch (Exception e) {
 			e.printStackTrace();
-			throw new UnpinPageException(e, "");
+			throw new btree.PinPageException(e,"");
+		}
+	}
+
+	private void unpinPage(PageId pageno)
+			throws UnpinPageException
+	{
+		try{
+			SystemDefs.JavabaseBM.unpinPage(pageno, false /* = not DIRTY */);
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			throw new UnpinPageException(e,"");
+		}
+	}
+
+	private void unpinPage(PageId pageno, boolean dirty)
+			throws UnpinPageException
+	{
+		try{
+			SystemDefs.JavabaseBM.unpinPage(pageno, dirty);
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			throw new UnpinPageException(e,"");
 		}
 	}
 
@@ -403,6 +438,29 @@ public class BitMapFile
 			e.printStackTrace();
 			throw new FreePageException(e, "");
 		}
+	}
+
+	private void  updateHeader(PageId newRoot)
+			throws IOException,
+			btree.PinPageException,
+			UnpinPageException, ConstructPageException {
+
+		BitMapHeaderPage header;
+		PageId old_data;
+
+
+		header= new BitMapHeaderPage( pinPage(headerPageId));
+
+		old_data = headerPage.get_rootId();
+		header.set_rootId( newRoot);
+
+		// clock in dirty bit to bm so our dtor needn't have to worry about it
+		unpinPage(headerPageId, true /* = DIRTY */ );
+
+
+		// ASSERTIONS:
+		// - headerPage, headerPageId valid, pinned and marked as dirty
+
 	}
 
 }

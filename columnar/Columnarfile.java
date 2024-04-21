@@ -266,7 +266,15 @@ public class Columnarfile {
             BitMapFile bitmapFile;
             String filename = this.name + "_" + columnNo;
 
-            if(SystemDefs.JavabaseDB.get_file_entry(filename) != null)
+            PageId pid = new PageId();
+            try {
+                pid = SystemDefs.JavabaseDB.get_file_entry(filename);
+            }
+            catch(Exception e)
+            {
+                System.out.println("get file entry failed");
+            }
+            if(pid != null)
             {
                 bitmapFile = new BitMapFile(filename);
             }
@@ -299,6 +307,7 @@ public class Columnarfile {
                     tuple = s.getNext(rid);
                 }
                 //Not position, but the identifier associated with each string
+
                 bitmapFile.Insert(position, strBitmapRange);
             }
 

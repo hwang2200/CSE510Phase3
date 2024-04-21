@@ -30,6 +30,10 @@ public class BitMapHeaderPage extends HFPage {
         }
     }
 
+    public BitMapHeaderPage(Page page) {
+        super(page);
+    }
+
     void set_magic0(int magic)
             throws IOException {
         setPrevPage(new PageId(magic));
