@@ -584,6 +584,9 @@ public class allPrograms {
                 case "BITMAP":
                     performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf);
                     break;
+                case "CBITMAP":
+                    performCBitmapScan(columnarFileName, targetColNames, valueConstraints, cf);
+                    break;
                 default:
                     System.err.println("Invalid access type");
                     break;
@@ -599,7 +602,7 @@ public class allPrograms {
         }
     }
 
-    public static void deleteQuery(String[] args) {
+    public static void deleteQuery(String[] args, Columnarfile cf) throws UnknownKeyTypeException, InvalidTupleSizeException, InvalidTypeException {
         PCounter.initialize();
 
         try {
@@ -610,36 +613,39 @@ public class allPrograms {
             String columnDBName = args[0];
             String columnarFileName = args[1];
             String targetColumns = args[2];
+            String[] targetColNames = targetColumns.split(",");
             String valueConstraints = args[3];
             int numBuf = Integer.parseInt(args[4]);
             String accessType = args[5];
 
-            //Parse value constraint
-
-
-            //For each, access DB accordingly and check the value constraint
-            if(accessType.equals("FILESCAN"))
-            {
-
+            switch (accessType.toUpperCase()) {
+                case "FILESCAN":
+                    System.out.println("ValueConstraints passing in: " + valueConstraints);
+                    performFileScan(columnarFileName, targetColNames, valueConstraints, cf);
+                    break;
+                case "COLUMNSCAN":
+                    performColumnScan(columnarFileName, targetColNames, valueConstraints, cf);
+                    break;
+                case "BTREE":
+                    performBTreeScan(columnarFileName, targetColNames, valueConstraints, cf);
+                    break;
+                case "BITMAP":
+                    performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf);
+                    break;
+                case "CBITMAP":
+                    performCBitmapScan(columnarFileName, targetColNames, valueConstraints, cf);
+                    break;
+                default:
+                    System.err.println("Invalid access type");
+                    break;
             }
-            else if(accessType.equals("COLUMNSCAN"))
-            {
 
-            }
-            else if(accessType.equals("BTREE"))
-            {
+            System.out.println("Number of disk pages read: " + PCounter.getReadCount());
+            System.out.println("Number of disk pages written: " + PCounter.getWriteCount());
 
-            }
-            else if(accessType.equals("BITMAP"))
-            {
-
-            }
-            else
-            {
-                System.out.println("Invalid access type!");
-                System.exit(1);
-            }
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException | IOException | IndexException | UnknownIndexTypeException |
+                 PageNotReadException | UnknowAttrType | FieldNumberOutOfBoundException | PredEvalException |
+                 WrongPermat | InvalidRelation | FileScanException | TupleUtilsException e) {
             throw new RuntimeException(e);
         }
     }
@@ -1039,6 +1045,10 @@ public class allPrograms {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private static void performCBitmapScan(String columnarFileName, String[] targetColumnNames, String valueConstraint, Columnarfile cf) {
+
     }
 }
 
