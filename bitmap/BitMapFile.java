@@ -547,6 +547,13 @@ public class BitMapFile
 			} while (tmpRID  != null);
 
 			try {
+				unpinPage(bmpage.getCurPage());
+			}catch (Exception e)
+			{
+				throw new RuntimeException(e);
+			}
+
+			try {
 				bmpage.setCurPage(bmpage.getNextPage());
 			} catch (IOException e) {
 				throw new RuntimeException(e);
@@ -556,17 +563,15 @@ public class BitMapFile
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
+
+
+
 			try {
 				pg1 = pinPage(bmpage.getCurPage());
 			}
 			catch (Exception e)
 			{
 				throw new RuntimeException(e);
-			}
-
-			if(count > 2000)
-			{
-				break;
 			}
 		}while(true);
 

@@ -69,7 +69,7 @@ public class allPrograms {
                     //System.out.println("Please enter in a query in the format: DATAFILENAME COLUMNDBNAME COLUMNARFILENAME NUMCOLUMNS");
 
                     System.out.println("Please enter in the name of the Data File: ");
-                    dataFileName = "sd3"; //"sd2";//scanner.nextLine();
+                    dataFileName = "sampleData"; //"sd2";//scanner.nextLine();
 
                     System.out.println("Please enter in the name of the Column DB: ");
                     colDBName = "sd2";//scanner.nextLine();
