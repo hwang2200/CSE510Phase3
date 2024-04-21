@@ -88,8 +88,6 @@ public class allPrograms {
                     //scan1.close();
                     break;
                 case "2":
-                    //Scanner scan2 = new Scanner(System.in);
-
                     //column DB name = specified above
                     //columnarfile name = returned by batchinsert
 
@@ -517,60 +515,18 @@ public class allPrograms {
                 minValue = Math.min(minValue, val);
                 maxValue = Math.max(maxValue, val);
             }
-            int range = maxValue - minValue + 1;
+            cf.intBitmapRange = maxValue - minValue + 1;
 
-            //All uncompressed int data arrays
-            List<int[]> uncompressedIntArrays = new ArrayList<>();
-
-            //Create
-            if(cf.type[columnNum].attrType == AttrType.attrInteger) {
-                for (int i = 0; i < intValArray.length; i++) {
-                    int[] uncompressed = new int[range];
-                    int pos = intValArray[i];
-                    uncompressed[pos] = 1;
-                    uncompressedIntArrays.add(uncompressed);
-                }
-            }
 
             if(cf.type[columnNum].attrType == AttrType.attrInteger)
             {
-                //Find number of leading and trailing zeros to aid in compression
-                for(int[] array : uncompressedIntArrays)
+                for(int i = 0; i < intValArray.length; i++)
                 {
-                    int leadingZeros = 0;
-                    int trailingZeros = 0;
-
-                    for(int i = 0; i < array.length; i++) {
-                        if(array[i] == 0) {
-                            leadingZeros += 1;
-                        } else if (array[i] == 1) {
-                            break;
-                        }
-                    }
-
-                    for(int i = array.length - 1; i >= 0; i--) {
-                        if(array[i] == 0) {
-                            trailingZeros += 1;
-                        } else if (array[i] == 1) {
-                            break;
-                        }
-                    }
-
-                    //Each even index will have count, each odd index will have value
-                    int[] CBitmap = {leadingZeros, 0, 1, 1, trailingZeros, 0};
-                    cf.intCBitmapRange = 6; //[leadingZeros, 0, 1, 1, trailingZeros, 0]
-
-                    //TODO
-                    System.out.println("For " + Arrays.toString(array) + ": " + leadingZeros + ", " + trailingZeros);
-                    System.out.println("CBitmap for ints: " + Arrays.toString(CBitmap));
-
-                    for(int i = 0; i < CBitmap.length; i++)
-                    {
-                        valueI.setValue(CBitmap[i]);
-                        cf.createCBitMapIndex(columnNum, valueI);
-                    }
+                    valueI.setValue(intValArray[i]);
+                    cf.createCBitMapIndex(columnNum, valueI);
                 }
             } else if(cf.type[columnNum].attrType == AttrType.attrString) {
+                cf.strCBitmapRange = 6;
                 for(int i = 0; i < strValArray.length; i++)
                 {
                     valueS.setValue(strValArray[i]);

@@ -179,7 +179,7 @@ public class BitMapFile
 			} else {
 				data = new byte[4];
 				// TODO: Modify headerpage so it stores information about how to insert using
-				
+
 			}
 
 			if ((key == 0 && page.available_space() >= 2) || (key == 1 && page.available_space() >= 4)) {
@@ -194,21 +194,9 @@ public class BitMapFile
 				newpage.writeBMPageArray(data);
 			}
 
-			return true;		
+			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
-			return false;
-		}
-	}
-
-	public boolean CInsert(int value)
-	{
-		//Length of bitmap array will always be 6
-		//Should insert the value passed into the array one at a time
-		try {
-
-			return true;
-		} catch(Exception e){
 			return false;
 		}
 	}
@@ -311,6 +299,50 @@ public class BitMapFile
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
+			return false;
+		}
+	}
+
+	public boolean CInsert(byte[] data)
+	{
+		//Length of bitmap array will always be 6
+		//Should insert each array into the page
+		try {
+			int key = headerPage.get_keyType();
+
+			BMPage page = new BMPage();
+			PageId apage = new PageId();
+
+			//if no header page, need to create new one
+			if(headerPage.get_rootId().pid == INVALID_PAGE) {
+				//Create new page and page structure
+				page.setNextPage(new PageId(INVALID_PAGE));
+				headerPage.set_rootId(page.getCurPage());
+
+
+				page = new BMPage(headerPage);
+				this.headerPageId = page.getCurPage();
+
+				page.setNextPage(new PageId(INVALID_PAGE));
+				page.setPrevPage(new PageId(INVALID_PAGE));
+
+				PageId nextpageno = headerPage.getNextPage();
+
+				while (nextpageno.pid != INVALID_PAGE) {
+					page.setCurPage(nextpageno);
+					nextpageno = page.getNextPage();
+				}
+				if ((key == 0 && page.available_space() >= 2) || (key == 1 && page.available_space() >= 4)) {
+					// Page exists with space
+					page.writeBMPageArray(data);
+				}
+			}
+			else
+			{
+				page.writeBMPageArray(data);
+			}
+			return true;
+		} catch(Exception e){
 			return false;
 		}
 	}
