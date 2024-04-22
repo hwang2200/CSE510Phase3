@@ -194,14 +194,79 @@ public class BitMapFile
 		}
 	}
 
-	public boolean Insert(int position, int bitmapRange)
+	public boolean Insert(int position, int bitmapRange, boolean compressed)
 			throws IOException {
+
 		try {
 			int key = headerPage.get_keyType();
 
+			byte[] data = null;
 
+			if(!compressed) {
+				if (key == 0 || key == 1) { //0 = int; 1 = str
+					data = new byte[bitmapRange];
+					data[position] = 1;
+				} else {
+					System.err.println("Key value invalid on bitmap insert: " + key);
+					return false;
+				}
+			}
+			else
+			{
+				List<int[]> uncompressedArray = new ArrayList<>();
 
+				if(key == 0 || key == 1)
+				{
+					int[] uncompressed = new int[bitmapRange];
+					uncompressed[position] = 1;
+					uncompressedArray.add(uncompressed);
 
+					for(int[] array : uncompressedArray)
+					{
+						int leadingZeros = 0;
+						int trailingZeros = 0;
+
+						for(int i = 0; i < array.length; i++) {
+							if(array[i] == 0) {
+								leadingZeros += 1;
+							} else if (array[i] == 1) {
+								break;
+							}
+						}
+
+						for(int i = array.length - 1; i >= 0; i--) {
+							if(array[i] == 0) {
+								trailingZeros += 1;
+							} else if (array[i] == 1) {
+								break;
+							}
+						}
+
+						//Each even index will have count, each odd index will have value
+						int[] CBitmap = {leadingZeros, 0, 1, 1, trailingZeros, 0};
+						data = new byte[6];
+
+						//TODO
+						System.out.println("For " + Arrays.toString(array) + ": " + leadingZeros + ", " + trailingZeros);
+						System.out.println("CBitmap for ints: " + Arrays.toString(CBitmap));
+						for (int i = 0; i < CBitmap.length; i++)
+						{
+							data[i] = (byte)CBitmap[i];
+						}
+					}
+				}
+				else
+				{
+					System.err.println("Key value invalid on bitmap insert: " + key);
+					return false;
+				}
+			}
+
+			if(data == null)
+			{
+				System.err.println("Data not set: NULL");
+				return false;
+			}
 			//if no header page, need to create new one
 			if(headerPage.get_rootId().pid == INVALID_PAGE)
 			{
@@ -225,17 +290,7 @@ public class BitMapFile
 				headerPage.set_rootId(page.getCurPage());
 
 				//Prepare data to add
-				byte[] data;
 
-				if (key == 0 || key == 1) {
-					data = new byte[bitmapRange];
-					data[position] = 1;
-				}
-				else
-				{
-					System.err.println("Key value invalid on bitmap insert: " + key);
-					return false;
-				}
 
 				if ((key == 0 && page.available_space() >= (bitmapRange + 4)) || (key == 1 && page.available_space() >= (bitmapRange + 4))) {
 					// Page exists with space
@@ -259,16 +314,6 @@ public class BitMapFile
 			//header page exists (simply insert the record)
 			else
 			{
-				byte[] data;
-				if (key == 0 || key == 1) {
-					data = new byte[bitmapRange];
-					data[position] = 1;
-				}
-				else
-				{
-					System.err.println("Key value invalid on bitmap insert: " + key);
-					return false;
-				}
 
 				PageId p = headerPage.get_rootId();
 				//apage = headerPage.set_rootId(pid);

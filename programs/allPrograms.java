@@ -125,13 +125,13 @@ public class allPrograms {
                     columnName = "C"; //scanner.nextLine();
 
                     System.out.println("Please enter in the value constraints (ColumnName Operator Value): ");
-                    valueConstraint = "C = 6"; // scanner.nextLine();
+                    valueConstraint = "C = 10"; // scanner.nextLine();
 
                     System.out.println("Please enter in the number of buffers: ");
                     numBuf = "1"; //scanner.nextLine();
 
                     System.out.println("Please enter in the access type (\"BITMAP\", or \"CBITMAP\"): ");
-                    accessType = "BITMAP"; //scanner.nextLine();
+                    accessType = "CBITMAP"; //scanner.nextLine();
 
                     queryArgs = new String[]{colDBName, columnarFileName, columnName, valueConstraint, numBuf, accessType};
                     Query(queryArgs, columnarFile);
@@ -313,12 +313,13 @@ public class allPrograms {
         String columnName = args[2];
         String indexType = (args[3]).toUpperCase();
 
+
         try {
 
             if (indexType.equals("BITMAP")) {
-                createBitMap(cf, columnarfileName, columnName);
+                createBitMap(cf, columnarfileName, columnName, false);
             } else if (indexType.equals("CBITMAP")) {
-                createCBitMap(cf, columnarfileName, columnName);
+                createBitMap(cf, columnarfileName, columnName, true);
             } else {
                 System.out.println("Usage: INDEXTYPE = \"BITMAP\", or \"CBITMAP\"");
                 System.exit(1);
@@ -361,7 +362,7 @@ public class allPrograms {
         }
     }
 
-    public static void createBitMap(Columnarfile cf, String columnarfileName, String columnName) {
+    public static void createBitMap(Columnarfile cf, String columnarfileName, String columnName, boolean compressed) {
         try {
             ColumnarFileMetadata columnarMetadata = cf.getColumnarFileMetadata();
             cf.columnNames = columnarMetadata.columnNames;
@@ -387,16 +388,16 @@ public class allPrograms {
             Tuple tuple = s.getNext(rid);
 
             //Find range to create bitmap for each value1
-            int maxValue = Integer.MIN_VALUE;
-            int minValue = Integer.MAX_VALUE;
             ArrayList<Integer> intValuesList = new ArrayList<>();
             ArrayList<String> strValuesList = new ArrayList<>();
 
             //Add value to array
+            Set<Integer> intSet = new HashSet<>();
             while (tuple != null) {
                 if (cf.type[columnNum].attrType == AttrType.attrInteger) {
                     int value = Convert.getIntValue(0, tuple.getTupleByteArray());
                     intValuesList.add(value);
+                    intSet.add(value);
                 } else if (cf.type[columnNum].attrType == AttrType.attrString) {
                     String value = Convert.getStrValue(0, tuple.getTupleByteArray(), 25);
                     strValuesList.add(value);
@@ -404,47 +405,46 @@ public class allPrograms {
                 tuple = s.getNext(rid);
             }
 
-            //Int range
-            Integer[] intValArray = intValuesList.toArray(new Integer[0]);
-            for (int val : intValArray) {
-                minValue = Math.min(minValue, val);
-                maxValue = Math.max(maxValue, val);
-            }
-
-            int range = maxValue - minValue + 1;
-            cf.intBitmapRange = range;
-
-
-            //Str range (number of distinct strings)
-            String[] strValArray = strValuesList.toArray(new String[0]);
-            Set<String> set = new HashSet<>(strValuesList);
-            List<String> distinctStr = new ArrayList<>(set);
-            Map<String, Integer> stringID = new HashMap<>();
-            for (int i = 0; i < distinctStr.size(); i++) {
-                stringID.put(distinctStr.get(i), i);
-            }
-            cf.strBitmapRange = distinctStr.size();
-            cf.stringHashMap = stringID;
-
-            //TODO - Delete
             if(cf.type[columnNum].attrType == AttrType.attrString) {
+                //Str range (number of distinct strings)
+                String[] strValArray = strValuesList.toArray(new String[0]);
+                Set<String> set = new HashSet<>(strValuesList);
+                List<String> distinctStr = new ArrayList<>(set);
+                Map<String, Integer> stringID = new HashMap<>();
+                for (int i = 0; i < distinctStr.size(); i++) {
+                    stringID.put(distinctStr.get(i), i);
+                }
+                cf.strBitmapRange = distinctStr.size();
+                cf.stringHashMap = stringID;
+
                 System.out.println("List without duplicates: " + distinctStr);
                 System.out.println("String bitmap range: " + cf.strBitmapRange);
                 System.out.println("Map of strings: " + stringID);
             }
             else
             {
+                //Int range
+                Dictionary<Integer, Integer> intDict = new Hashtable<>();
+                int position = 0;
+                for (int val : intSet) {
+                    intDict.put(val, position);
+                    position++;
+                }
+                int range = intDict.size();
+                cf.intBitmapRange = range;
+                cf.integerDictionary = intDict;
+
                 System.out.println("Int Range: " + range);
             }
 
             //Loop through each value in the array and call createBitMapIndex on it
             for (int i = 0; i < cf.heapfiles[columnNum].getRecCnt(); i++) {
                 if (cf.type[columnNum].attrType == AttrType.attrInteger) {
-                    valueI.setValue(intValArray[i]);
-                    cf.createBitMapIndex(columnNum, valueI);
+                    valueI.setValue(intValuesList.get(i));
+                    cf.createBitMapIndex(columnNum, valueI, compressed);
                 } else if (cf.type[columnNum].attrType == AttrType.attrString) {
-                    valueS.setValue(strValArray[i]);
-                    cf.createBitMapIndex(columnNum, valueS);
+                    valueS.setValue(strValuesList.get(i));
+                    cf.createBitMapIndex(columnNum, valueS, compressed);
                 }
             }
 
@@ -453,104 +453,6 @@ public class allPrograms {
                cf.BMFiles[columnNum].toString();
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void createCBitMap(Columnarfile cf, String columnarfileName, String columnName)
-    {
-        try {
-            ColumnarFileMetadata columnarMetadata = cf.getColumnarFileMetadata();
-            cf.columnNames = columnarMetadata.columnNames;
-
-            int columnNum = -1;
-            IntegerValueClass valueI = new IntegerValueClass();
-            StringValueClass valueS = new StringValueClass();
-
-            //Loops through all columns
-            for (int i = 0; i < cf.columnNames.length; i++) {
-                if (cf.columnNames[i].equals(columnName)) {
-                    columnNum = i;
-                }
-            }
-            if (columnNum == -1) {
-                System.out.println("Column not found for createBitMap function");
-                return;
-            }
-
-            //Loops through records in a heapfile
-            RID rid = new RID();
-            Scan s = cf.heapfiles[columnNum].openScan();
-            Tuple tuple = s.getNext(rid);
-
-            //Find range to create bitmap for each value1
-            int maxValue = Integer.MIN_VALUE;
-            int minValue = Integer.MAX_VALUE;
-            ArrayList<Integer> intValuesList = new ArrayList<>();
-            ArrayList<String> strValuesList = new ArrayList<>();
-
-            //Add value to array
-            while (tuple != null) {
-                if (cf.type[columnNum].attrType == AttrType.attrInteger) {
-                    int value = Convert.getIntValue(0, tuple.getTupleByteArray());
-                    intValuesList.add(value);
-                } else if (cf.type[columnNum].attrType == AttrType.attrString) {
-                    String value = Convert.getStrValue(0, tuple.getTupleByteArray(), 25);
-                    strValuesList.add(value);
-                }
-                tuple = s.getNext(rid);
-            }
-
-            //String
-            String[] strValArray = strValuesList.toArray(new String[0]);
-            Set<String> set = new HashSet<>(strValuesList);
-            List<String> distinctStr = new ArrayList<>(set);
-            Map<String, Integer> stringID = new HashMap<>();
-            for (int i = 0; i < distinctStr.size(); i++) {
-                stringID.put(distinctStr.get(i), i);
-            }
-            cf.strBitmapRange = distinctStr.size();
-            cf.stringHashMap = stringID;
-
-            //Int range
-            Integer[] intValArray = intValuesList.toArray(new Integer[0]);
-            for (int val : intValArray) {
-                minValue = Math.min(minValue, val);
-                maxValue = Math.max(maxValue, val);
-            }
-            cf.intBitmapRange = maxValue - minValue + 1;
-
-
-            if(cf.type[columnNum].attrType == AttrType.attrInteger)
-            {
-                for(int i = 0; i < intValArray.length; i++)
-                {
-                    valueI.setValue(intValArray[i]);
-                    cf.createCBitMapIndex(columnNum, valueI);
-                }
-            } else if(cf.type[columnNum].attrType == AttrType.attrString) {
-                cf.strCBitmapRange = 6;
-                for(int i = 0; i < strValArray.length; i++)
-                {
-                    valueS.setValue(strValArray[i]);
-                    cf.createCBitMapIndex(columnNum, valueS);
-                }
-            }
-
-            if(GlobalDebug.debug)
-            {
-                BitMapFile tmpBMF = new BitMapFile("sd2_" + columnNum);
-                BitMapHeaderPage bmhp = tmpBMF.getHeaderPage();
-                RID tmpRID = new RID();
-                tmpRID = bmhp.firstRecord();
-                Tuple t = new Tuple();
-                do {
-                    t = bmhp.getRecord(tmpRID);
-                    byte[] data = t.getTupleByteArray();
-                    System.out.println("Data: " + Arrays.toString(data));
-                } while ((tmpRID = bmhp.nextRecord(tmpRID)) != null);
-            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -586,10 +488,10 @@ public class allPrograms {
                     performBTreeScan(columnarFileName, targetColNames, valueConstraints, cf);
                     break;
                 case "BITMAP":
-                    performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf);
+                    performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf, false);
                     break;
                 case "CBITMAP":
-                    performCBitmapScan(columnarFileName, targetColNames, valueConstraints, cf);
+                    performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf, true);
                     break;
                 default:
                     System.err.println("Invalid access type");
@@ -634,10 +536,10 @@ public class allPrograms {
                     performBTreeScan(columnarFileName, targetColNames, valueConstraints, cf);
                     break;
                 case "BITMAP":
-                    performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf);
+                    performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf, false);
                     break;
                 case "CBITMAP":
-                    performCBitmapScan(columnarFileName, targetColNames, valueConstraints, cf);
+                    performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf, true);
                     break;
                 default:
                     System.err.println("Invalid access type");
@@ -922,7 +824,7 @@ public class allPrograms {
         }
     }
 
-    private static void performBitmapScan(String columnarFileName, String[] targetColumnNames, String valueConstraint, Columnarfile cf) {
+    private static void performBitmapScan(String columnarFileName, String[] targetColumnNames, String valueConstraint, Columnarfile cf, boolean compressed) {
         try {
             //obtains value constraints and ops
             CondExpr[] valueConstraintExpr = new CondExpr[1];
@@ -1001,8 +903,14 @@ public class allPrograms {
                 System.out.println(valueConstraintExpr[0].operand1.string + ", " + valueConstraintExpr[0].operand2.integer);
             }
 
-
-            String bmfilename = "sd2_" + columnNum;
+            String bmfilename;
+            if(!compressed) {
+                 bmfilename = "sd2_" + columnNum;
+            }
+            else
+            {
+                bmfilename = "Csd2_" + columnNum;
+            }
             BitMapFile tmpBMF = null;
             int count = 0;
             try {
@@ -1045,24 +953,40 @@ public class allPrograms {
                     }
                     byte[] data = t.getTupleByteArray();
 
-
-                    if(cf.type[columnNum].attrType == AttrType.attrString)
-                    {
+                    //handle string case
+                    if (cf.type[columnNum].attrType == AttrType.attrString) {
                         int posValue = cf.stringHashMap.get(value);
-                        if (data.length == cf.stringHashMap.size() && data[posValue] == 1) {
-                            tupleMatchPos.add(tmpPos);
-                            count++;
-                            System.out.println("Data[" + tmpPos + "]: ");
+                        if(!compressed) {
+                            if (data[posValue] == 1) {
+                                tupleMatchPos.add(tmpPos);
+                                count++;
+                                System.out.println("Data[" + tmpPos + "]: ");
+                            }
+                        }
+                        else {
+                            posValue--;
+                            if (data[0] == posValue) {
+                                tupleMatchPos.add(tmpPos);
+                                count++;
+                                System.out.println("Data[" + tmpPos + "]: ");
+                            }
+                        }
+                    } else { //handling int case
+                        if(!compressed) {
+                            if (data[Integer.parseInt(value)] == 1) {
+                                tupleMatchPos.add(tmpPos);
+                                count++;
+                                System.out.println("Data[" + tmpPos + "]");
+                            }
+                        }
+                        else {
+                            if (data[0] == cf.integerDictionary.get(Integer.parseInt(value))) {
+                                tupleMatchPos.add(tmpPos);
+                                count++;
+                                System.out.println("Data[" + tmpPos + "]");
+                            }
                         }
                     }
-                    else {
-                        if (data.length == cf.intBitmapRange && data[Integer.parseInt(value)] == 1) {
-                            tupleMatchPos.add(tmpPos);
-                            count++;
-                            System.out.println("Data[" + tmpPos + "]");
-                        }
-                    }
-
 
                     try {
                         tmpRID = bmpage.nextRecord(tmpRID);
@@ -1112,10 +1036,6 @@ public class allPrograms {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private static void performCBitmapScan(String columnarFileName, String[] targetColumnNames, String valueConstraint, Columnarfile cf) {
-
     }
 }
 

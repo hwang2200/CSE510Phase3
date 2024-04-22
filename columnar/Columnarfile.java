@@ -34,6 +34,8 @@ public class Columnarfile {
     public BTreeFile[] bTreeFiles;
     public Map<String, Integer> stringHashMap;
 
+    public Dictionary<Integer, Integer> integerDictionary;
+
     public Columnarfile(String name, String[] colNames, int numColumns, AttrType[] type)
             throws IOException, HFDiskMgrException, HFException, HFBufMgrException, SpaceNotAvailableException, InvalidSlotNumberException, InvalidTupleSizeException {
         this.name = name;
@@ -261,10 +263,17 @@ public class Columnarfile {
         return true;
     }
 
-    public boolean createBitMapIndex(int columnNo, ValueClass value) {
+    public boolean createBitMapIndex(int columnNo, ValueClass value, boolean compressed) {
         try {
             BitMapFile bitmapFile;
-            String filename = this.name + "_" + columnNo;
+            String filename;
+            if (!compressed) {
+                filename = this.name + "_" + columnNo;
+            }
+            else {
+                filename = "C" + this.name + "_" + columnNo;
+            }
+
 
             PageId pid = new PageId();
             try {
@@ -293,7 +302,7 @@ public class Columnarfile {
 
             if(value instanceof IntegerValueClass)
             {
-                bitmapFile.Insert(((IntegerValueClass) value).getValue(), intBitmapRange);
+                bitmapFile.Insert(integerDictionary.get(((IntegerValueClass) value).getValue()), intBitmapRange, compressed);
             }
             else if(value instanceof StringValueClass)
             {
@@ -316,140 +325,7 @@ public class Columnarfile {
                 }
                 //Not position, but the identifier associated with each string
 
-                bitmapFile.Insert(position, strBitmapRange);
-            }
-
-            //TODO
-            //BTreeFile tmpB = new BTreeFile(filename);
-            this.BMFiles[columnNo] = bitmapFile;
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public boolean createCBitMapIndex(int columnNo, ValueClass value) {
-        try {
-            BitMapFile bitmapFile;
-            String filename = "C" + this.name + "_" + columnNo;
-
-            if(SystemDefs.JavabaseDB.get_file_entry(filename) != null)
-            {
-                bitmapFile = new BitMapFile(filename);
-            }
-            else
-            {
-                bitmapFile = new BitMapFile(filename, this, columnNo, value);
-            }
-
-            List<int[]> uncompressedIntArrays = new ArrayList<>();
-            List<int[]> uncompressedStrArrays = new ArrayList<>();
-            //List<Byte> intCBitmap = new ArrayList<Byte>();
-
-            if(value instanceof IntegerValueClass)
-            {
-
-                //New function CInsert
-                int[] uncompressed = new int[intBitmapRange];
-                int pos = ((IntegerValueClass) value).getValue();
-                uncompressed[pos] = 1;
-                uncompressedIntArrays.add(uncompressed);
-
-                for(int[] array : uncompressedIntArrays)
-                {
-                    int leadingZeros = 0;
-                    int trailingZeros = 0;
-
-                    for(int i = 0; i < array.length; i++) {
-                        if(array[i] == 0) {
-                            leadingZeros += 1;
-                        } else if (array[i] == 1) {
-                            break;
-                        }
-                    }
-
-                    for(int i = array.length - 1; i >= 0; i--) {
-                        if(array[i] == 0) {
-                            trailingZeros += 1;
-                        } else if (array[i] == 1) {
-                            break;
-                        }
-                    }
-
-                    //Each even index will have count, each odd index will have value
-                    int[] CBitmap_int = {leadingZeros, 0, 1, 1, trailingZeros, 0};
-                    intCBitmapRange = 6; //[leadingZeros, 0, 1, 1, trailingZeros, 0]
-
-                    //TODO
-                    System.out.println("For " + Arrays.toString(array) + ": " + leadingZeros + ", " + trailingZeros);
-                    System.out.println("CBitmap for ints: " + Arrays.toString(CBitmap_int));
-
-                    byte[] byteCBitmap_int = new byte[CBitmap_int.length];
-                    for (int i = 0; i < CBitmap_int.length; i++)
-                    {
-                        byteCBitmap_int[i] = (byte)CBitmap_int[i];
-                    }
-                    System.out.println(Arrays.toString(byteCBitmap_int));
-                    bitmapFile.CInsert(byteCBitmap_int);
-                }
-            }
-            else if(value instanceof StringValueClass)
-            {
-                int[] uncompressed = new int[strBitmapRange];
-                int position = 0;
-                RID rid = new RID();
-                Scan s = heapfiles[columnNo].openScan();
-                Tuple tuple = s.getNext(rid);
-
-                while(tuple != null) {
-                    byte[] strByteArray = tuple.returnTupleByteArray();
-                    String strData = Convert.getStrValue(0, strByteArray, 25);
-                    //Find which string it is in the dictionary
-                    if (strData.equals(((StringValueClass) value).getValue())) {
-                        position = stringHashMap.get(strData);
-                        break;
-                    }
-                    tuple = s.getNext(rid);
-                }
-                uncompressed[position] = 1;
-                uncompressedStrArrays.add(uncompressed);
-
-                for(int[] array : uncompressedStrArrays)
-                {
-                    int leadingZeros = 0;
-                    int trailingZeros = 0;
-
-                    for(int i = 0; i < array.length; i++) {
-                        if(array[i] == 0) {
-                            leadingZeros += 1;
-                        } else if (array[i] == 1) {
-                            break;
-                        }
-                    }
-
-                    for(int i = array.length - 1; i >= 0; i--) {
-                        if(array[i] == 0) {
-                            trailingZeros += 1;
-                        } else if (array[i] == 1) {
-                            break;
-                        }
-                    }
-
-                    //Each even index will have count, each odd index will have value
-                    int[] CBitmap_str = {leadingZeros, 0, 1, 1, trailingZeros, 0};
-                    strCBitmapRange = 6; //[leadingZeros, 0, 1, 1, trailingZeros, 0]
-                    //TODO
-                    System.out.println("For " + Arrays.toString(array) + ": " + leadingZeros + ", " + trailingZeros);
-                    System.out.println("CBitmap for strings: " + Arrays.toString(CBitmap_str));
-                    byte[] byteCBitmap_str = new byte[CBitmap_str.length];
-                    for (int i = 0; i < CBitmap_str.length; i++)
-                    {
-                        byteCBitmap_str[i] = (byte)CBitmap_str[i];
-                    }
-                    System.out.println(Arrays.toString(byteCBitmap_str));
-                    bitmapFile.CInsert(byteCBitmap_str);
-                }
+                bitmapFile.Insert(position, strBitmapRange, compressed);
             }
 
             //TODO
