@@ -12,6 +12,8 @@ public class IndexType {
   public static final int Hash    = 2;
   public static final int BitMapIndex = 3;
 
+  public static final int CBitMapIndex = 4;
+
   public int indexType;
 
   /** 
@@ -44,6 +46,8 @@ public class IndexType {
         return "Hash";
       case BitMapIndex:
         return "BitMapIndex";
+      case CBitMapIndex:
+        return "CBitMapIndex";
     }
     return ("Unexpected IndexType " + indexType);
   }

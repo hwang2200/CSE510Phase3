@@ -1,54 +1,48 @@
 package programs;
 
 import TID.TID;
-import bitmap.BM;
 import bitmap.BMPage;
 import bitmap.BitMapFile;
-import bitmap.BitMapHeaderPage;
 import btree.*;
 import bufmgr.PageNotReadException;
 import columnar.ColumnarFileMetadata;
+import columnar.ColumnarIndexEquiJoins;
 import columnar.Columnarfile;
 import columnar.TupleScan;
-import index.ColumnarIndexScan;
 import diskmgr.*;
 import global.*;
 import heap.*;
 import iterator.*;
-import org.w3c.dom.Attr;
 import value.IntegerValueClass;
 import value.StringValueClass;
-import value.ValueClass;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import index.IndexException;
 import index.UnknownIndexTypeException;
 import java.util.*;
 
-import static global.GlobalConst.INVALID_PAGE;
-
 
 public class allPrograms {
 
 
-    public static void main(String[] args) throws UnknownKeyTypeException, InvalidTupleSizeException, InvalidTypeException {
+    public static void main(String[] args) throws UnknownKeyTypeException, InvalidTupleSizeException, InvalidTypeException, HFDiskMgrException, InvalidSlotNumberException, HFBufMgrException, IOException {
         Columnarfile columnarFile = null;
         BitMapFile bitmapFile = null;
         Scanner scanner = new Scanner(System.in);
         String option = null;
-        String dataFileName;
-        String colDBName;
-        String columnarFileName;
-        String numColumns;
-        String columnName;
-        String indexType;
+        String dataFileName = "";
+        String colDBName = "";
+        String columnarFileName = "";
+        String numColumns = "";
+        String columnName = "";
+        String indexType = "";
         String[] queryArgs;
         String valueConstraint;
         String numBuf;
         String accessType;
+        List<Columnarfile> cfs = new ArrayList<>();
 
         do {
 
@@ -56,7 +50,8 @@ public class allPrograms {
             System.out.println("2. Index Program");
             System.out.println("3. Query Program");
             System.out.println("4. Delete Query Program");
-            System.out.println("5. Quit Program");
+            System.out.println("5. Index Join Program");
+            System.out.println("6. Quit Program");
             System.out.println();
             System.out.print("Enter Option from above: ");
             option = scanner.nextLine();
@@ -69,20 +64,42 @@ public class allPrograms {
                     //System.out.println("Please enter in a query in the format: DATAFILENAME COLUMNDBNAME COLUMNARFILENAME NUMCOLUMNS");
 
                     System.out.println("Please enter in the name of the Data File: ");
-                    dataFileName = "5-10a"; //"sd2";//scanner.nextLine();
+                    dataFileName = scanner.nextLine();
 
                     System.out.println("Please enter in the name of the Column DB: ");
-                    colDBName = "sd2";//scanner.nextLine();
+                    colDBName = scanner.nextLine();// + DB
 
                     System.out.println("Please enter in the name of the Columnar File: ");
-                    columnarFileName = "sd2";//scanner.nextLine();
+                    columnarFileName = scanner.nextLine();//+ COL
 
                     System.out.println("Please enter in the number of columns: ");
-                    numColumns = "5"; //scanner.nextLine();
+                    numColumns =  scanner.nextLine();
 
                     queryArgs = new String[]{dataFileName, colDBName, columnarFileName, numColumns};
 
-                    columnarFile = batchInsert(queryArgs);
+
+                    boolean found = false;
+                    for(int i = 0; i < cfs.size(); i++)
+                    {
+                        if( cfs.get(i).name.equals(dataFileName))
+                        {
+                            columnarFile = cfs.get(i);
+                            found = true;
+                        }
+                    }
+                    columnarFile = batchInsert(queryArgs, columnarFile);
+                    if(found)
+                    {
+                        for (int i = 0; i < cfs.size(); i++) {
+                            if (cfs.get(i).name.equals(dataFileName)) {
+                                cfs.set(i, columnarFile);
+                            }
+                        }
+                    }
+                    if(!found) {
+                        cfs.add(columnarFile);
+                    }
+
                     //System.out.println(columnarFile.toString());
 
                     //scan1.close();
@@ -95,16 +112,16 @@ public class allPrograms {
                     //System.out.println("Please enter in a query in the format: COLUMNDBNAME COLUMNARFILENAME COLUMNAME INDEXTYPE");
 
                     System.out.println("Please enter in the name of the Column DB: ");
-                    colDBName = "sd2DB"; //scanner.nextLine();
+                    colDBName = scanner.nextLine(); // dataFileName + "DB";
 
                     System.out.println("Please enter in the name of the Columnar File: ");
-                    columnarFileName = "sd2COL"; //scanner.nextLine();
+                    columnarFileName = scanner.nextLine(); //dataFileName + "COL";
 
                     System.out.println("Please enter in the Target Column Name: ");
-                    columnName = scanner.nextLine();
+                    columnName = scanner.nextLine();//"C";
 
                     System.out.println("Please enter in the Index Type (\"BITMAP\", or \"CBITMAP\"): ");
-                    indexType = scanner.nextLine();
+                    indexType = scanner.nextLine(); //"CBITMAP";
 
                     queryArgs = new String[]{colDBName, columnarFileName, columnName, indexType};
                     index(queryArgs, columnarFile);
@@ -116,22 +133,22 @@ public class allPrograms {
                     System.out.println("Welcome to Query!");
 
                     System.out.println("Please enter in the name of the Column DB: ");
-                    colDBName = "sd2DB"; //scanner.nextLine();
+                    colDBName = scanner.nextLine(); //dataFileName + "DB";
 
                     System.out.println("Please enter in the name of the Columnar File: ");
-                    columnarFileName = "sd2COL"; //scanner.nextLine();
+                    columnarFileName =  scanner.nextLine(); //dataFileName + "COL";
 
                     System.out.println("Please enter in the Target Column Name(s) separated by ',': ");
-                    columnName = "C"; //scanner.nextLine();
+                    columnName = scanner.nextLine();
 
                     System.out.println("Please enter in the value constraints (ColumnName Operator Value): ");
-                    valueConstraint = "C = 10"; // scanner.nextLine();
+                    valueConstraint = scanner.nextLine();
 
                     System.out.println("Please enter in the number of buffers: ");
-                    numBuf = "1"; //scanner.nextLine();
+                    numBuf = scanner.nextLine();//"1";
 
                     System.out.println("Please enter in the access type (\"BITMAP\", or \"CBITMAP\"): ");
-                    accessType = "CBITMAP"; //scanner.nextLine();
+                    accessType = scanner.nextLine(); //"CBITMAP";
 
                     queryArgs = new String[]{colDBName, columnarFileName, columnName, valueConstraint, numBuf, accessType};
                     Query(queryArgs, columnarFile);
@@ -161,18 +178,126 @@ public class allPrograms {
                     deleteQuery(queryArgs, columnarFile);
                     break;
                 case "5":
+                    System.out.println("Welcome to Columnar IndexEquiJoin!");
+
+                    String columnarFile1;
+                    String columnarFile2;
+                    System.out.println("Please enter in the name of the Columnar Files: ");
+                    columnarFile1 = scanner.nextLine();
+                    columnarFile2 = scanner.nextLine();
+
+                    int ind1 = -1;
+                    int ind2 = -1;
+                    for(int i =0; i < cfs.size(); i++)
+                    {
+                        if(cfs.get(i).name.equals(columnarFile1))
+                        {
+                            ind1 = i;
+                            break;
+                        }
+                    }
+                    for(int i =0; i < cfs.size(); i++)
+                    {
+                        if(cfs.get(i).name.equals(columnarFile1))
+                        {
+                            ind2 = i;
+                            break;
+                        }
+                    }
+
+                    if(ind1 == -1 || ind2 == -1)
+                    {
+                        System.out.println("ColumnarFile not found");
+                        break;
+                    }
+
+
+                    String joinColumn1, joinColumn2;
+                    int joinCol1Num = -1, joinCol2Num = -1;
+                    System.out.println("Please enter in the Target Column Name (ColumnarFile 1): ");
+                    joinColumn1 = scanner.nextLine();// "C";
+
+                    System.out.println("Please enter in the Target Column Name (ColumnarFile 2): ");
+                    joinColumn2 = scanner.nextLine();  //"C" ;
+
+                    for(int i = 0; i < cfs.get(0).columnNames.length; i++) {
+                        if(cfs.get(0).columnNames[i].equals(joinColumn1))
+                        {
+                            joinCol1Num = i;
+                            break;
+                        }
+                    }
+                    if(joinCol1Num == -1) { System.out.println("Column1 not found: " + joinColumn1); break; }
+
+                    for(int i = 0; i < cfs.get(1).columnNames.length; i++) {
+                        if(cfs.get(1).columnNames[i].equals(joinColumn2))
+                        {
+                            joinCol2Num = i;
+                            break;
+                        }
+                    }
+
+                    if(joinCol2Num == -1) { System.out.println("Column2 not found: " + joinColumn2); break; }
+
+
+
+                    System.out.println("Please enter in the Index type (\"BITMAP\", or \"CBITMAP\"): ");
+                    accessType = scanner.nextLine();
+                    IndexType[] indexTypes = new IndexType[1];
+                    indexTypes[0] = new IndexType(0);
+                    if(accessType.equals("BITMAP"))
+                    {
+                        indexTypes[0].indexType = IndexType.BitMapIndex;
+                    }
+                    else
+                    {
+                        indexTypes[0].indexType = IndexType.CBitMapIndex;
+                    }
+                    FldSpec[] projList = new FldSpec[1];
+                    projList[0] = new FldSpec(new RelSpec(RelSpec.outer),  1);
+
+
+                    if(cfs.size() < 2) { System.out.println("Not enough cfs in system"); break; }
+                    if(cfs.get(0).heapfiles[0].getRecCnt() < cfs.get(1).heapfiles[0].getRecCnt()) {
+                        ColumnarIndexEquiJoins joinCols
+                                = new ColumnarIndexEquiJoins(cfs.get(1), cfs.get(0),
+                                0,
+                                joinCol2Num,
+                                joinCol1Num,
+                                indexTypes,
+                                projList,
+                                 1);
+                        System.out.println(joinCols);
+                    }
+                    else{
+                        ColumnarIndexEquiJoins joinCols
+                                = new ColumnarIndexEquiJoins(cfs.get(0), cfs.get(1),
+                                0,
+                                joinCol1Num,
+                                joinCol2Num,
+                                indexTypes,
+                                projList,
+                                1);
+                        System.out.println(joinCols);
+                    }
+
+
+                    break;
+                case "6":
                     System.out.println("Quitting...");
                     break;
             }
-        } while (!option.equals("5"));
+        } while (!option.equals("6"));
 
 
         scanner.close();
     }
 
-    public static Columnarfile batchInsert(String[] args) {
+
+    public static Columnarfile batchInsert(String[] args, Columnarfile columnarFile) {
         PCounter.initialize();
         Columnarfile cf = null;
+        if(columnarFile != null) {cf = columnarFile;}
 
         try {
 
@@ -488,10 +613,10 @@ public class allPrograms {
                     performBTreeScan(columnarFileName, targetColNames, valueConstraints, cf);
                     break;
                 case "BITMAP":
-                    performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf, false);
+                    performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf, false, false);
                     break;
                 case "CBITMAP":
-                    performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf, true);
+                    performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf, true, false);
                     break;
                 default:
                     System.err.println("Invalid access type");
@@ -536,10 +661,10 @@ public class allPrograms {
                     performBTreeScan(columnarFileName, targetColNames, valueConstraints, cf);
                     break;
                 case "BITMAP":
-                    performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf, false);
+                    performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf, false, true);
                     break;
                 case "CBITMAP":
-                    performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf, true);
+                    performBitmapScan(columnarFileName, targetColNames, valueConstraints, cf, true, true);
                     break;
                 default:
                     System.err.println("Invalid access type");
@@ -824,7 +949,7 @@ public class allPrograms {
         }
     }
 
-    private static void performBitmapScan(String columnarFileName, String[] targetColumnNames, String valueConstraint, Columnarfile cf, boolean compressed) {
+    private static void performBitmapScan(String columnarFileName, String[] targetColumnNames, String valueConstraint, Columnarfile cf, boolean compressed, boolean toDelete) {
         try {
             //obtains value constraints and ops
             CondExpr[] valueConstraintExpr = new CondExpr[1];
@@ -912,6 +1037,7 @@ public class allPrograms {
                 bmfilename = "Csd2_" + columnNum;
             }
             BitMapFile tmpBMF = null;
+
             int count = 0;
             try {
                 tmpBMF = new BitMapFile(bmfilename);
@@ -923,93 +1049,93 @@ public class allPrograms {
             int currPID = firstPage.pid;
             int lastPID = tmpBMF.getHeaderPage().get_rootId().pid;
             Page pg1 = null;
-            try
-            {
+            try {
                 pg1 = tmpBMF.pinPage(firstPage);
             } catch (btree.PinPageException e) {
                 throw new RuntimeException(e);
             }
 
-            //
-            List<Integer> tupleMatchPos = new ArrayList<>();
+            if(!toDelete){
+                List<Integer> tupleMatchPos = new ArrayList<>();
 
-            int tmpPos = 0;
-            do {
-                BMPage bmpage = new BMPage(pg1);
-
-                RID tmpRID = new RID();
-                try {
-                    tmpRID = bmpage.firstRecord();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                Tuple t = new Tuple();
-
+                int tmpPos = 0;
                 do {
-                    try {
-                        t = bmpage.getRecord(tmpRID);
-                    } catch (IOException | InvalidSlotNumberException e) {
-                        throw new RuntimeException(e);
-                    }
-                    byte[] data = t.getTupleByteArray();
+                    BMPage bmpage = new BMPage(pg1);
 
-                    //handle string case
-                    if (cf.type[columnNum].attrType == AttrType.attrString) {
-                        int posValue = cf.stringHashMap.get(value);
-                        if(!compressed) {
-                            if (data[posValue] == 1) {
-                                tupleMatchPos.add(tmpPos);
-                                count++;
-                                System.out.println("Data[" + tmpPos + "]: ");
-                            }
-                        }
-                        else {
-                            posValue--;
-                            if (data[0] == posValue) {
-                                tupleMatchPos.add(tmpPos);
-                                count++;
-                                System.out.println("Data[" + tmpPos + "]: ");
-                            }
-                        }
-                    } else { //handling int case
-                        if(!compressed) {
-                            if (data[Integer.parseInt(value)] == 1) {
-                                tupleMatchPos.add(tmpPos);
-                                count++;
-                                System.out.println("Data[" + tmpPos + "]");
-                            }
-                        }
-                        else {
-                            if (data[0] == cf.integerDictionary.get(Integer.parseInt(value))) {
-                                tupleMatchPos.add(tmpPos);
-                                count++;
-                                System.out.println("Data[" + tmpPos + "]");
-                            }
-                        }
-                    }
-
+                    RID tmpRID = new RID();
                     try {
-                        tmpRID = bmpage.nextRecord(tmpRID);
-                        if(tmpRID != null) { tmpPos++; }
+                        tmpRID = bmpage.firstRecord();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                } while (tmpRID  != null);
+                    Tuple t = new Tuple();
 
-                try {
-                    tmpBMF.unpinPage(new PageId(currPID));
-                }catch (Exception e)
-                {
-                    throw new RuntimeException(e);
-                }
+                    do {
+                        try {
+                            t = bmpage.getRecord(tmpRID);
+                        } catch (IOException | InvalidSlotNumberException e) {
+                            throw new RuntimeException(e);
+                        }
+                        byte[] data = t.getTupleByteArray();
 
-                try {
-                    currPID++;
-                    if(currPID > lastPID) { break; }
-                    bmpage.setCurPage(new PageId(currPID ));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                        //handle string case
+                        if (cf.type[columnNum].attrType == AttrType.attrString) {
+                            int posValue = cf.stringHashMap.get(value);
+                            if (!compressed) {
+                                if (data[posValue] == 1) {
+                                    tupleMatchPos.add(tmpPos);
+                                    count++;
+                                    System.out.println("Data[" + tmpPos + "]: ");
+                                }
+                            } else {
+                                posValue--;
+                                if (data[0] == posValue) {
+                                    tupleMatchPos.add(tmpPos);
+                                    count++;
+                                    System.out.println("Data[" + tmpPos + "]: ");
+                                }
+                            }
+                        } else { //handling int case
+                            if (!compressed) {
+                                if (data[Integer.parseInt(value)] == 1) {
+                                    tupleMatchPos.add(tmpPos);
+                                    count++;
+                                    System.out.println("Data[" + tmpPos + "]");
+                                }
+                            } else {
+                                if (data[0] == cf.integerDictionary.get(Integer.parseInt(value))) {
+                                    tupleMatchPos.add(tmpPos);
+                                    count++;
+                                    System.out.println("Data[" + tmpPos + "]");
+                                }
+                            }
+                        }
+
+                        try {
+                            tmpRID = bmpage.nextRecord(tmpRID);
+                            if (tmpRID != null) {
+                                tmpPos++;
+                            }
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } while (tmpRID != null);
+
+                    try {
+                        tmpBMF.unpinPage(new PageId(currPID));
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    try {
+                        currPID++;
+                        if (currPID > lastPID) {
+                            break;
+                        }
+                        bmpage.setCurPage(new PageId(currPID));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
 //                try {
 //                    if(bmpage.getCurPage().pid == INVALID_PAGE) { break; }
 //                } catch (IOException e) {
@@ -1017,18 +1143,27 @@ public class allPrograms {
 //                }
 
 
-                try {
-                    pg1 = tmpBMF.pinPage(bmpage.getCurPage());
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException(e);
-                }
-            }while(true);
+                    try {
+                        pg1 = tmpBMF.pinPage(bmpage.getCurPage());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                } while (true);
 
-            System.out.println(tupleMatchPos.size() + " matches found for value constraint " + Arrays.toString(values));
-            System.out.println("Indeces:");
-            System.out.println(tupleMatchPos);
+                System.out.println(tupleMatchPos.size() + " matches found for value constraint " + Arrays.toString(values));
+                System.out.println("Indeces:");
+                System.out.println(tupleMatchPos);
+            }
+            else {
+                if(valueConstraintExpr[0].type2.attrType == AttrType.attrInteger) {
+                    if(!compressed){
+                        tmpBMF.Delete(Integer.parseInt(value), cf.intBitmapRange, false);
+                    }
+                    else {
+                        tmpBMF.Delete(cf.integerDictionary.get(value), cf.intBitmapRange, true);
+                    }
+                }
+            }
 
 
 
