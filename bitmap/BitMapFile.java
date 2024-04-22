@@ -419,7 +419,7 @@ public class BitMapFile
 		}
 	}
 
-	private Page pinPage(PageId pageno)
+	public Page pinPage(PageId pageno)
 			throws btree.PinPageException
 	{
 		try {
@@ -433,7 +433,7 @@ public class BitMapFile
 		}
 	}
 
-	private void unpinPage(PageId pageno)
+	public void unpinPage(PageId pageno)
 			throws UnpinPageException
 	{
 		try{
@@ -445,7 +445,7 @@ public class BitMapFile
 		}
 	}
 
-	private void unpinPage(PageId pageno, boolean dirty)
+	public void unpinPage(PageId pageno, boolean dirty)
 			throws UnpinPageException
 	{
 		try{
@@ -497,6 +497,7 @@ public class BitMapFile
 		int count = 0;
 		BitMapFile tmpBMF = null;
 		try {
+			System.out.println(this.bmfilename);
 			tmpBMF = new BitMapFile(this.bmfilename);
 		} catch (GetFileEntryException | ConstructPageException | IOException e) {
 			throw new RuntimeException(e);
@@ -514,14 +515,11 @@ public class BitMapFile
 			BMPage bmpage = new BMPage(pg1);
 			try {
 				System.out.println("BMPage: " + bmpage.getCurPage().pid);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-			try {
 				System.out.println("Next BMPage: " + bmpage.getNextPage().pid);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
+
 			RID tmpRID = new RID();
 			try {
 				tmpRID = bmpage.firstRecord();

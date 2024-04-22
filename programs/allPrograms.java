@@ -69,7 +69,7 @@ public class allPrograms {
                     //System.out.println("Please enter in a query in the format: DATAFILENAME COLUMNDBNAME COLUMNARFILENAME NUMCOLUMNS");
 
                     System.out.println("Please enter in the name of the Data File: ");
-                    dataFileName = "sampleData"; //"sd2";//scanner.nextLine();
+                    dataFileName = "5-10a"; //"sd2";//scanner.nextLine();
 
                     System.out.println("Please enter in the name of the Column DB: ");
                     colDBName = "sd2";//scanner.nextLine();
@@ -78,7 +78,7 @@ public class allPrograms {
                     columnarFileName = "sd2";//scanner.nextLine();
 
                     System.out.println("Please enter in the number of columns: ");
-                    numColumns = "4"; //scanner.nextLine();
+                    numColumns = "5"; //scanner.nextLine();
 
                     queryArgs = new String[]{dataFileName, colDBName, columnarFileName, numColumns};
 
@@ -195,7 +195,8 @@ public class allPrograms {
 
             String[] columnNames = new String[columns.length];
             AttrType[] columnTypes = new AttrType[columns.length];
-            short[] offSets = new short[columns.length];
+            int stringSizesLength = 0;
+            short[] offSets = new short[columns.length + 1];
             int byteLength = 0;
             for (int i = 0; i < columns.length; i++) {
 
@@ -210,7 +211,14 @@ public class allPrograms {
                     columnTypes[i] = new AttrType(AttrType.attrString);
                     byteLength += 25;
                     offSets[i] = 25;
+                    stringSizesLength++;
                 }
+            }
+
+            short[] stringSizes = new short[stringSizesLength];
+            for( int i = 0; i < stringSizesLength; i++)
+            {
+                stringSizes[i] = 25;
             }
 
             short[] tmpOffsets = new short[offSets.length];
@@ -221,10 +229,13 @@ public class allPrograms {
             }
 
             offSets = tmpOffsets;
+            System.out.println("Offsets: " + Arrays.toString(offSets));
 
             cf = new Columnarfile(columnarfileName, columnNames, columnNames.length, columnTypes);
+
             cf.tupleLength = byteLength;
             cf.tupleOffSets = offSets;
+
 
             //Read data from data file
             byte[] dataFileArray = new byte[byteLength + 6];
@@ -233,6 +244,7 @@ public class allPrograms {
             String currLine = br.readLine();
             while (currLine != null) {
                 String[] splitLine = currLine.split("\\s+");
+                System.out.println("Parsing in: " + Arrays.toString(splitLine));
                 for (int i = 0; i < columnTypes.length; i++) {
                     if (columnTypes[i].attrType == AttrType.attrInteger) {
                         Convert.setIntValue(Integer.parseInt(splitLine[i]), offset, dataFileArray);
@@ -259,7 +271,7 @@ public class allPrograms {
             tid.recordIDs = new RID[numColumns];
 
             Tuple tuple = new Tuple();
-            tuple.setHdr((short) numColumns, cf.type, new short[]{25,25});
+            tuple.setHdr((short) numColumns, cf.type, stringSizes);
             //System.out.println("tuple a:" + tuple);
             for(int i = 0; i < numColumns; i++)
             {
@@ -267,6 +279,7 @@ public class allPrograms {
             }
             System.out.println();
             int count = 0;
+            System.out.println(Arrays.toString(columnTypes));
             while((tuple = tscan.getNext(tid)) != null)
             {
                 count++;
@@ -989,46 +1002,109 @@ public class allPrograms {
             }
 
 
-            BitMapFile tmpBMF = new BitMapFile("sd2_" + columnNum);
-            BitMapHeaderPage bmhp = tmpBMF.getHeaderPage();
-            RID tmpRID = new RID();
-            tmpRID = bmhp.firstRecord();
-            Tuple t = new Tuple();
-
-            int[] tupleMatchPos = new int[cf.heapfiles[columnNum].getRecCnt()];
-            for(int i = 0; i < tupleMatchPos.length; i++)
-            {
-                tupleMatchPos[i] = -1;
+            String bmfilename = "sd2_" + columnNum;
+            BitMapFile tmpBMF = null;
+            int count = 0;
+            try {
+                tmpBMF = new BitMapFile(bmfilename);
+            } catch (GetFileEntryException | ConstructPageException | IOException e) {
+                throw new RuntimeException(e);
             }
-            int recIndex = 0;
+
+            PageId firstPage = new PageId(tmpBMF.getHeaderPage().firstPID + 1);
+            int currPID = firstPage.pid;
+            int lastPID = tmpBMF.getHeaderPage().get_rootId().pid;
+            Page pg1 = null;
+            try
+            {
+                pg1 = tmpBMF.pinPage(firstPage);
+            } catch (btree.PinPageException e) {
+                throw new RuntimeException(e);
+            }
+
+            //
+            List<Integer> tupleMatchPos = new ArrayList<>();
+
             int tmpPos = 0;
             do {
-                t = bmhp.getRecord(tmpRID);
-                byte[] data = t.getTupleByteArray();
-                if(cf.type[columnNum].attrType == AttrType.attrString)
-                {
-                    int posValue = cf.stringHashMap.get(value);
-                    if (data.length == cf.stringHashMap.size() && data[posValue] == 1) {
-                        tupleMatchPos[tmpPos] = recIndex;
-                        tmpPos++;
-                    }
-                }
-                else {
-                    if (data.length == cf.intBitmapRange && data[Integer.parseInt(value)] == 1) {
-                        tupleMatchPos[tmpPos] = recIndex;
-                        tmpPos++;
-                    }
-                }
-                recIndex++;
+                BMPage bmpage = new BMPage(pg1);
 
-            } while ((tmpRID = bmhp.nextRecord(tmpRID)) != null);
-            for(int i = 0; i < tupleMatchPos.length; i++)
-            {
-                if(tupleMatchPos[i] != -1)
-                {
-                    System.out.println("Match found; index: " + tupleMatchPos[i] + " for value: " + value);
+                RID tmpRID = new RID();
+                try {
+                    tmpRID = bmpage.firstRecord();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            }
+                Tuple t = new Tuple();
+
+                do {
+                    try {
+                        t = bmpage.getRecord(tmpRID);
+                    } catch (IOException | InvalidSlotNumberException e) {
+                        throw new RuntimeException(e);
+                    }
+                    byte[] data = t.getTupleByteArray();
+
+
+                    if(cf.type[columnNum].attrType == AttrType.attrString)
+                    {
+                        int posValue = cf.stringHashMap.get(value);
+                        if (data.length == cf.stringHashMap.size() && data[posValue] == 1) {
+                            tupleMatchPos.add(tmpPos);
+                            count++;
+                            System.out.println("Data[" + tmpPos + "]: ");
+                        }
+                    }
+                    else {
+                        if (data.length == cf.intBitmapRange && data[Integer.parseInt(value)] == 1) {
+                            tupleMatchPos.add(tmpPos);
+                            count++;
+                            System.out.println("Data[" + tmpPos + "]");
+                        }
+                    }
+
+
+                    try {
+                        tmpRID = bmpage.nextRecord(tmpRID);
+                        if(tmpRID != null) { tmpPos++; }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                } while (tmpRID  != null);
+
+                try {
+                    tmpBMF.unpinPage(new PageId(currPID));
+                }catch (Exception e)
+                {
+                    throw new RuntimeException(e);
+                }
+
+                try {
+                    currPID++;
+                    if(currPID > lastPID) { break; }
+                    bmpage.setCurPage(new PageId(currPID ));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+//                try {
+//                    if(bmpage.getCurPage().pid == INVALID_PAGE) { break; }
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//                }
+
+
+                try {
+                    pg1 = tmpBMF.pinPage(bmpage.getCurPage());
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }while(true);
+
+            System.out.println(tupleMatchPos.size() + " matches found for value constraint " + Arrays.toString(values));
+            System.out.println("Indeces:");
+            System.out.println(tupleMatchPos);
 
 
 

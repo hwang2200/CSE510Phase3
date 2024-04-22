@@ -540,7 +540,7 @@ public class Columnarfile {
         for(int i = 0; i < numColumns; i++)
         {
             try {
-                result += columnNames[i] + ": " + heapfiles[i].getRecCnt();
+                result += columnNames[i] + ":" + heapfiles[i].getRecCnt() + " ";
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
