@@ -1,0 +1,13 @@
+A:char(25)	B:char(25)	C:int	D:int	E:char(25)
+Montana	NEW_ZEALAND	6	74	Snipe
+Arkansas	Greece	4	31	Prionace_glauca
+Maine	France	7	82	Heron
+Indiana	Saudi_Arabia	7	19	Skunk
+Maryland	Rhode_Island	7	10	Rhinoceros
+Indiana	Japan	5	24	Isogomphodon
+Arkansas	Lithuania	9	37	Zebra
+Idaho	Italy	6	77	Heron
+North_Carolina	Uganda	5	87	Pinniped
+Arizona	Madagascar	7	66	Swallow
+AAA	BBB	10	100	EEE
+AAAA	BBBB	10	100	EEEE

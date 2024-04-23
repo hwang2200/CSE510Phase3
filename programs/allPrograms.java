@@ -307,7 +307,7 @@ public class allPrograms {
             }
             String datafileName = args[0] + ".txt";
             String columnDBName = args[1] + "DB";
-            String columnarfileName = args[2];
+            String columnarfileName = args[2] + "COL";
             int numColumns = Integer.parseInt(args[3]);
 
             SystemDefs sysDefs = new SystemDefs(columnDBName, 100000, 100, "Clock");
@@ -1030,11 +1030,11 @@ public class allPrograms {
 
             String bmfilename;
             if(!compressed) {
-                 bmfilename = "sd2_" + columnNum;
+                 bmfilename = columnarFileName + "_" + columnNum;
             }
             else
             {
-                bmfilename = "Csd2_" + columnNum;
+                bmfilename = "C" + columnarFileName + "_" + columnNum;
             }
             BitMapFile tmpBMF = null;
 
