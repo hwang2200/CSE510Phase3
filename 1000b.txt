@@ -63,7 +63,7 @@ Montana	MARSHALL_ISLANDS	31	37	Hornet
 Alaska	Greece	38	58	Hyena
 Missouri	Guatemala	38	37	Hyena
 South_Carolina	Alaska	32	47	Apristurus
-West Virginia	Massachusetts	37	43	Partridge
+West_Virginia	Massachusetts	37	43	Partridge
 Wyoming	Uzbekistan	33	21	Gazelle
 Virginia	Ethiopia	34	59	Parascyllium
 Michigan	Ireland	39	68	Sheep
@@ -90,7 +90,7 @@ Arizona	Washington	36	78	Goldfinch
 Colorado	Sudan	35	16	Raven
 Minnesota	COSTA_RICA	36	22	Magpie
 Florida	Croatia	37	41	American_Bison
-West Virginia	Taiwan	33	71	Black_panther
+West_Virginia	Taiwan	33	71	Black_panther
 California	Saudi_Arabia	34	38	Badger
 Georgia	NEW_ZEALAND	32	11	Jaguar
 New_Mexico	Taiwan	31	51	Cobra
@@ -103,7 +103,7 @@ New_Hampshire	Ethiopia	35	15	Bison
 North_Carolina	Jordan	36	71	Negaprion
 Connecticut	Rhode_Island	36	50	Hemiscyllium
 Indiana	Sudan	32	66	American_Bison
-West Virginia	Illinois	34	88	Mallard
+West_Virginia	Illinois	34	88	Mallard
 New_Hampshire	Finland	38	69	Snipe
 Arkansas	Sudan	35	53	Human
 Massachusetts	Uruguay	37	77	Gorilla
@@ -166,7 +166,7 @@ New_Mexico	Hawaii	30	49	Lion
 Minnesota	Malta	39	45	Bison
 Oklahoma	Switzerland	33	97	Fish
 Pennsylvania	Uruguay	35	95	Wren
-West Virginia	Rhode_Island	38	79	Cheetah
+West_Virginia	Rhode_Island	38	79	Cheetah
 Delaware	Saudi_Arabia	36	98	Wombat
 Wisconsin	Slovakia	34	93	Quail
 Mississippi	Netherlands	39	64	Chiloscyllium
@@ -179,7 +179,7 @@ Indiana	Thailand	38	67	Giraffe
 Michigan	Luxembourg	36	74	Alligator
 Tennessee	Tonga	30	16	Sawshark
 Michigan	Tuvalu	34	41	Cirrhoscyllium
-West Virginia	New_Jersey	36	69	Zebra
+West_Virginia	New_Jersey	36	69	Zebra
 California	Ukraine	37	89	Otter
 Rhode_Island	Nebraska	35	20	Crow
 New_Hampshire	Madagascar	31	91	Donkey
@@ -255,7 +255,7 @@ Oklahoma	Nebraska	36	22	Hemiscyllium
 Oregon	MARSHALL_ISLANDS	35	59	Ostrich
 Iowa	WESTERN_SAHARA	33	1	Squaliformes
 Michigan	Finland	39	33	Magpie
-West Virginia	Guatemala	32	97	Crow
+West_Virginia	Guatemala	32	97	Crow
 Arizona	Nepal	39	34	Magpie
 Iowa	Vatican_City	35	93	Hyena
 Maryland	Denmark	32	8	Coyote
@@ -380,7 +380,7 @@ Michigan	Sudan	39	18	Reindeer
 Illinois	South_Carolina	33	9	Manatee
 Virginia	Colombia	35	55	Reindeer
 Oklahoma	New_Jersey	32	94	Otter
-West Virginia	Ghana	30	66	Pinniped
+West_Virginia	Ghana	30	66	Pinniped
 Nebraska	Ecuador	30	46	Triakis
 North_Dakota	Minnesota	36	45	Columbidae
 Virginia	New_Mexico	35	1	Chamois
@@ -408,7 +408,7 @@ Nevada	Denmark	31	45	Jaguar
 Alabama	Uzbekistan	39	12	Whale_Shark
 Oregon	Latvia	33	99	Sawshark
 Indiana	Serbia	34	8	Poroderma
-West Virginia	EL_SALVADOR	34	11	Whale_Shark
+West_Virginia	EL_SALVADOR	34	11	Whale_Shark
 Rhode_Island	Rhode_Island	37	98	Coyote
 Arkansas	North_Carolina	32	70	Mule
 New_Mexico	Maryland	35	80	Crow
@@ -452,7 +452,7 @@ Kentucky	Wyoming	32	80	Anatidae
 Oregon	Ghana	32	65	Isurus
 Connecticut	Latvia	33	88	Hornet
 Arkansas	Dominica	38	32	Columbidae
-West Virginia	Ethiopia	31	78	Rhinoceros
+West_Virginia	Ethiopia	31	78	Rhinoceros
 Texas	Uruguay	35	22	Poroderma
 Idaho	Nauru	39	81	Carcharhiniformes
 Alabama	Nauru	39	2	Chiloscyllium
@@ -468,7 +468,7 @@ Nebraska	Missouri	38	60	Columbidae
 Maine	DOMINICAN_REPUBLIC	35	65	Lion
 Florida	Missouri	31	38	Snipe
 Alabama	Tunisia	37	2	Isurus
-West Virginia	Australia	31	98	Hornet
+West_Virginia	Australia	31	98	Hornet
 Montana	Finland	10	71	Anatidae
 Montana	Turkey	36	77	Giant_Panda
 Iowa	Spain	32	73	Zebra
@@ -550,7 +550,7 @@ Utah	California	31	54	Apristurus
 Kansas	Zambia	33	66	Anatidae
 Alabama	Minnesota	33	36	American_Bison
 Colorado	Maryland	38	24	Mallard
-West Virginia	Maine	33	40	Badger
+West_Virginia	Maine	33	40	Badger
 Idaho	Spain	39	94	Giant_Panda
 Maryland	Greece	30	41	Moose
 North_Carolina	Malawi	32	59	Jaguar
@@ -561,7 +561,7 @@ Wyoming	Dominica	31	89	American_Bison
 Nebraska	Barbados	31	73	Triaenodon
 Minnesota	TRINIDAD_AND_TOBAGO	30	91	Apristurus
 New_Hampshire	Alabama	34	78	Sawshark
-West Virginia	EQUATORIAL_GUINEA	37	52	Black_panther
+West_Virginia	EQUATORIAL_GUINEA	37	52	Black_panther
 California	Barbados	34	45	Mouse
 Connecticut	Grenada	34	95	Gazelle
 New_Hampshire	North_Carolina	38	2	Sawshark
@@ -620,7 +620,7 @@ South_Carolina	Wisconsin	39	26	Dogfish
 Indiana	NEW_ZEALAND	35	2	Hemiscyllium
 Arkansas	Singapore	33	6	Isurus
 Oklahoma	Alaska	37	10	Anatidae
-West Virginia	Rhode_Island	32	5	Pony
+West_Virginia	Rhode_Island	32	5	Pony
 Indiana	New_Mexico	32	14	Skunk
 Maryland	Singapore	30	24	Mouse
 New_York	Virginia	30	6	Pony
@@ -646,7 +646,7 @@ California	Barbados	35	0	Chiloscyllium
 Indiana	Ecuador	38	37	Isurus
 Montana	Spain	37	25	Hemiscyllium
 Utah	EL_SALVADOR	32	47	Hawk
-West Virginia	Uganda	36	3	Chiloscyllium
+West_Virginia	Uganda	36	3	Chiloscyllium
 Wisconsin	Missouri	31	1	Poroderma
 New_Mexico	TRINIDAD_AND_TOBAGO	35	39	Gerbil
 Tennessee	Florida	31	49	Fox
@@ -703,7 +703,7 @@ Arizona	CZECH_REPUBLIC	10	51	Donkey
 Wisconsin	Alabama	38	89	Rhizoprionodon
 Louisiana	Spain	34	41	Negaprion
 Maine	Mississippi	34	57	Triakis
-West Virginia	Morocco	30	87	Anatidae
+West_Virginia	Morocco	30	87	Anatidae
 Nebraska	Saudi_Arabia	39	82	Squaliformes
 Texas	Greece	30	93	Gerbil
 Illinois	Massachusetts	30	87	Beaver
@@ -763,8 +763,8 @@ Wisconsin	Missouri	33	1	Giraffe
 Vermont	Slovenia	32	12	Louse
 Vermont	Luxembourg	32	0	Echinorhinus
 Kentucky	Tonga	35	54	Pony
-West Virginia	Minnesota	35	33	Gorilla
-West Virginia	Slovakia	38	61	Pygmy_Shark
+West_Virginia	Minnesota	35	33	Gorilla
+West_Virginia	Slovakia	38	61	Pygmy_Shark
 Delaware	Monaco	36	39	Otter
 Wyoming	Hawaii	33	6	Prionace
 Minnesota	Maine	39	83	Louse
@@ -816,7 +816,7 @@ Minnesota	Canada	31	31	Gazelle
 Arizona	Thailand	34	21	Magpie
 Alaska	Grenada	34	64	Carcharhinus
 Kansas	Tonga	38	37	Fish
-West Virginia	Dominica	37	97	Ram
+West_Virginia	Dominica	37	97	Ram
 Maryland	Cyprus	32	48	Wombat
 Nevada	Morocco	32	81	Carcharhiniformes
 Arkansas	Jordan	32	70	Hemiscyllium
@@ -841,7 +841,7 @@ Georgia	Nebraska	33	43	Carcharhiniformes
 Wisconsin	Malta	37	67	Beaver
 Nebraska	Nebraska	38	13	Wombat
 Pennsylvania	Tuvalu	10	11	Carcharhinus
-West Virginia	Uganda	36	1	Orectolobus
+West_Virginia	Uganda	36	1	Orectolobus
 Minnesota	Georgia	39	60	Hyena
 Kentucky	Lithuania	35	80	Bullhead_shark
 New_Mexico	Switzerland	38	13	Manatee
@@ -857,7 +857,7 @@ Connecticut	Florida	34	74	Pelican
 North_Dakota	Spain	38	82	Guanaco
 New_Jersey	Singapore	33	83	Goose
 Virginia	France	38	32	Pinniped
-West Virginia	Turkey	38	69	Donkey
+West_Virginia	Turkey	38	69	Donkey
 Utah	Illinois	36	91	Flamingo
 Ohio	Maryland	36	8	Lion
 Illinois	Wyoming	33	14	Isurus
@@ -883,7 +883,7 @@ Louisiana	Ireland	37	54	Fish
 Michigan	Tuvalu	38	51	Cobra
 Colorado	DOMINICAN_REPUBLIC	32	28	Black_panther
 Iowa	NEW_ZEALAND	39	14	Prionace
-West Virginia	France	37	17	Whale_Shark
+West_Virginia	France	37	17	Whale_Shark
 New_Jersey	Illinois	31	53	Skunk
 New_Jersey	Hawaii	34	66	Skunk
 Arkansas	Malta	34	13	Donkey
@@ -945,7 +945,7 @@ South_Carolina	Netherlands	34	77	Pristiophorus
 Wisconsin	Ireland	33	86	Ostrich
 Idaho	COSTA_RICA	34	54	Anatidae
 New_Mexico	Maine	39	65	Pygmy_Shark
-West Virginia	Mozambique	36	88	Hamster
+West_Virginia	Mozambique	36	88	Hamster
 Virginia	South_Carolina	35	2	Manatee
 Michigan	Sweden	36	18	Cirrhoscyllium
 New_Mexico	Maine	30	87	Chiloscyllium
@@ -996,7 +996,7 @@ Wyoming	CZECH_REPUBLIC	36	21	Human
 Alaska	Massachusetts	33	61	Echinorhinus
 Mississippi	Slovenia	36	21	Donkey
 Idaho	New_Mexico	38	55	Squaliformes
-West Virginia	Texas	35	80	Quail
+West_Virginia	Texas	35	80	Quail
 Washington	New_Jersey	37	3	Giant_Panda
 Kansas	New_Jersey	39	0	Giant_Panda
 AAA	BBB	11	100	EEE
